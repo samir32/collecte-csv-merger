@@ -4,6 +4,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: '/collecte-csv-merger/',
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
