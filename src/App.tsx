@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { CsvUploader } from './components/CsvUploader';
 import { CsvPreviewTable } from './components/CsvPreviewTable';
 import { EquipmentReview } from './components/EquipmentReview';
+import { SetupWizard, SetupConfig } from './components/SetupWizard';
+import { WorkingSheet } from './components/WorkingSheet';
 import { processCsvFiles, exportToCsv, ProcessedResult } from './utils/csv-logic';
 import { 
   processWithExcelLogic, 
@@ -21,13 +23,14 @@ import {
   FileSpreadsheet,
   Eye,
   LayoutList,
-  ClipboardList
+  ClipboardList,
+  Edit3
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 import { motion, AnimatePresence } from 'motion/react';
 
 type TabType = 'combined' | 'done' | 'todo';
-type ViewMode = 'csv' | 'excel';
+type ViewMode = 'csv' | 'excel' | 'working';
 type ExcelTab = 'all' | 'procedures' | 'notCollected' | 'noLubePoint' | 'sampled' | 'questions';
 
 export default function App() {
@@ -39,6 +42,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('combined');
   const [viewMode, setViewMode] = useState<ViewMode>('csv');
   const [excelTab, setExcelTab] = useState<ExcelTab>('all');
+  const [setupConfig, setSetupConfig] = useState<SetupConfig | null>(null);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
 
   useEffect(() => {
     if (files.length > 0) {
@@ -266,6 +271,23 @@ export default function App() {
                     <Eye size={20} />
                     Equipment Review
                   </button>
+                  <button
+                    onClick={() => {
+                      if (!setupConfig) {
+                        setShowSetupWizard(true);
+                      } else {
+                        setViewMode('working');
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+                      viewMode === 'working'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Edit3 size={20} />
+                    Working Sheet
+                  </button>
                 </div>
               </div>
 
@@ -446,6 +468,44 @@ export default function App() {
                   </div>
                 </>
               )}
+
+              {/* Working Sheet View */}
+              {viewMode === 'working' && setupConfig && (
+                <>
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-purple-900">
+                          {setupConfig.clientName}
+                        </h3>
+                        <p className="text-sm text-purple-700 mt-1">
+                          Language: {setupConfig.language.toUpperCase()} | 
+                          Pre-program: {setupConfig.preProgram ? 'Yes' : 'No'} | 
+                          Spartakus: {setupConfig.spartakus ? 'Yes' : 'No'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowSetupWizard(true)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
+                      >
+                        Change Settings
+                      </button>
+                    </div>
+                  </div>
+
+                  <WorkingSheet
+                    equipment={excelResult.processed}
+                    clientName={setupConfig.clientName}
+                    language={setupConfig.language}
+                    onUpdate={(updated) => {
+                      setExcelResult({
+                        ...excelResult,
+                        processed: updated,
+                      });
+                    }}
+                  />
+                </>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -459,6 +519,27 @@ export default function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Setup Wizard Modal */}
+      <AnimatePresence>
+        {showSetupWizard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50"
+          >
+            <SetupWizard
+              onComplete={(config) => {
+                setSetupConfig(config);
+                setShowSetupWizard(false);
+                setViewMode('working');
+                toast.success('Configuration saved!');
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
