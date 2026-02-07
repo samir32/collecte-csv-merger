@@ -3,7 +3,7 @@ import { CsvUploader } from './components/CsvUploader';
 import { CsvPreviewTable } from './components/CsvPreviewTable';
 import { EquipmentReview } from './components/EquipmentReview';
 import { SetupWizard, SetupConfig } from './components/SetupWizard';
-import { WorkingSheet } from './components/WorkingSheet';
+import { WorkingSheet } from './components/WorkingSheet-v2';
 import { processCsvFiles, exportToCsv, ProcessedResult } from './utils/csv-logic';
 import { 
   processWithExcelLogic, 
@@ -497,6 +497,8 @@ export default function App() {
 
                       <WorkingSheet
                         equipment={excelResult.processed}
+                        rawData={result.combined}
+                        schema={result.schema}
                         clientName={setupConfig.clientName}
                         language={setupConfig.language}
                         onUpdate={(updated) => {
