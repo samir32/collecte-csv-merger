@@ -3,7 +3,7 @@ import { CsvUploader } from './components/CsvUploader';
 import { CsvPreviewTable } from './components/CsvPreviewTable';
 import { EquipmentReview } from './components/EquipmentReview';
 import { SetupWizard, SetupConfig } from './components/SetupWizard';
-import { WorkingSheet } from './components/WorkingSheet-v2';
+import { WorkingSheet } from './components/WorkingSheet';
 import { processCsvFiles, exportToCsv, ProcessedResult } from './utils/csv-logic';
 import { 
   processWithExcelLogic, 
