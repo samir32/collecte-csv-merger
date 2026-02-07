@@ -247,13 +247,13 @@ export default function App() {
             >
               {/* View Mode Toggle */}
               <div className="flex justify-center">
-                <div className="inline-flex bg-white rounded-xl border border-gray-300 p-1 shadow-sm">
+                <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('csv')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
                       viewMode === 'csv'
                         ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <FileCheck size={20} />
@@ -264,7 +264,7 @@ export default function App() {
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
                       viewMode === 'excel'
                         ? 'bg-green-600 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Eye size={20} />
@@ -275,7 +275,7 @@ export default function App() {
                     className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
                       viewMode === 'working'
                         ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-white text-gray-600 hover:bg-gray-100'
+                        : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Edit3 size={20} />
