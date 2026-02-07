@@ -204,7 +204,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
             {t.continue}
           </button>
         </div>
-      </div>
     </div>
   );
 }

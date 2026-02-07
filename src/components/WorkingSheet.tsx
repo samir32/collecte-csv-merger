@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProcessedEquipment } from '../utils/excel-processor';
-import { Edit2, Save, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Save } from 'lucide-react';
 import menuData from '../data/menu-dropdowns.json';
 
 interface WorkingSheetProps {
@@ -10,8 +10,9 @@ interface WorkingSheetProps {
   onUpdate: (updatedEquipment: ProcessedEquipment[]) => void;
 }
 
-interface EditableEquipment extends ProcessedEquipment {
-  // Left side editable fields (A-AD / 1-30)
+interface WorkingRow {
+  id: string;
+  // Left side - Editable fields (A-AD / Columns 1-30)
   criticality?: string;
   status?: string;
   area?: string;
@@ -28,7 +29,7 @@ interface EditableEquipment extends ProcessedEquipment {
   currentLubricant?: string;
   recommendedLubricant?: string;
   lubricantLIS?: string;
-  numberOfPoints?: number;
+  numberOfPoints?: string;
   procedureNumber?: string;
   procedure?: string;
   subTask1?: string;
@@ -37,90 +38,92 @@ interface EditableEquipment extends ProcessedEquipment {
   measuredTask2?: string;
   operationStatus?: string;
   componentClassDropdown?: string;
-  timeInterval?: number;
-  requiredTime?: number;
-  recommendedQuantity?: number;
+  timeInterval?: string;
+  requiredTime?: string;
+  recommendedQuantity?: string;
   unit?: string;
   comment?: string;
 }
 
 export function WorkingSheet({ equipment, clientName, language, onUpdate }: WorkingSheetProps) {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editedData, setEditedData] = useState<EditableEquipment | null>(null);
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
+  const [equipmentRows, setEquipmentRows] = useState<Map<number, WorkingRow[]>>(
+    new Map(equipment.map((_, index) => [index, [{ id: `row-0` }]]))
+  );
+
+  const currentEquipment = equipment[currentPage];
+  const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
 
   const labels = {
     fr: {
       criticality: 'CRITICITÉ',
       status: 'Statut',
       area: 'Secteur',
-      assetNumber: "Numéro d'équipement",
-      assetDescription: "Nom d'équipement",
-      componentClass: 'Classe du composant',
-      subComponent: 'Sous-composant',
-      subComponentDescription: 'Description du Sous-composant',
-      failureMode1: 'Mode de défaillance 1',
-      failureMode2: 'Mode de défaillance 2',
-      failureMode3: 'Mode de défaillance 3',
-      failureMode4: 'Mode de défaillance 4',
-      failureMode5: 'Mode de défaillance 5',
-      currentLubricant: 'Lubrifiant actuel',
-      recommendedLubricant: 'Lubrifiant recommandé',
-      lubricantLIS: 'LIS de Lubrifiant recommandé',
-      numberOfPoints: 'Nombre des points',
-      procedureNumber: 'Numéro de procédure',
+      assetNumber: "N° d'équip.",
+      assetDescription: "Nom d'équip.",
+      componentClass: 'Classe',
+      subComponent: 'Sous-comp.',
+      subComponentDesc: 'Desc.',
+      failureMode1: 'Défaillance 1',
+      failureMode2: 'Défaillance 2',
+      failureMode3: 'Défaillance 3',
+      failureMode4: 'Défaillance 4',
+      failureMode5: 'Défaillance 5',
+      currentLubricant: 'Lub. actuel',
+      recommendedLubricant: 'Lub. recommandé',
+      lubricantLIS: 'LIS',
+      numberOfPoints: 'Nb points',
+      procedureNumber: 'Proc. #',
       procedure: 'Procédure',
       subTask1: 'Sous-tâche 1',
       subTask2: 'Sous-tâche 2',
-      measuredTask1: 'Tâche mesurée 1',
-      measuredTask2: 'Tâche mesurée 2',
-      operationStatus: "État de l'opération",
-      componentClassDropdown: 'Classe de composant',
-      timeInterval: 'Interval (jours)',
-      requiredTime: 'Temps requis (min)',
-      recommendedQuantity: 'Quantité recommandée',
+      measuredTask1: 'Tâche mes. 1',
+      measuredTask2: 'Tâche mes. 2',
+      operationStatus: 'État op.',
+      timeInterval: 'Interval (j)',
+      requiredTime: 'Temps (min)',
+      recommendedQuantity: 'Quantité',
       unit: 'Unité',
-      comment: 'Commentaire/Question',
-      // Reference data (right side)
+      comment: 'Commentaire',
+      // Reference
       particle: 'Particle',
       moisture: 'Humidité',
       vibration: 'Vibration',
-      orientation: 'Oriéntation',
-      temperature: 'Temperature',
-      runtime: "Temp d'operation",
+      orientation: 'Orientation',
+      temperature: 'Température',
+      runtime: "Temps d'op.",
     },
     en: {
-      criticality: 'CRITICALITY',
+      criticality: 'PRIORITY',
       status: 'Status',
       area: 'Area',
-      assetNumber: 'Equipment Number',
-      assetDescription: 'Equipment Name',
-      componentClass: 'Component Class',
-      subComponent: 'Sub-component',
-      subComponentDescription: 'Sub-component Description',
-      failureMode1: 'Failure Mode 1',
-      failureMode2: 'Failure Mode 2',
-      failureMode3: 'Failure Mode 3',
-      failureMode4: 'Failure Mode 4',
-      failureMode5: 'Failure Mode 5',
-      currentLubricant: 'Current Lubricant',
-      recommendedLubricant: 'Recommended Lubricant',
-      lubricantLIS: 'Recommended Lubricant LIS Number',
-      numberOfPoints: '# of Points',
-      procedureNumber: 'Procedure #',
+      assetNumber: 'Equip. #',
+      assetDescription: 'Equip. Name',
+      componentClass: 'Class',
+      subComponent: 'Sub-comp.',
+      subComponentDesc: 'Desc.',
+      failureMode1: 'Failure 1',
+      failureMode2: 'Failure 2',
+      failureMode3: 'Failure 3',
+      failureMode4: 'Failure 4',
+      failureMode5: 'Failure 5',
+      currentLubricant: 'Current Lube',
+      recommendedLubricant: 'Rec. Lube',
+      lubricantLIS: 'LIS',
+      numberOfPoints: '# Points',
+      procedureNumber: 'Proc. #',
       procedure: 'Procedure',
       subTask1: 'Sub Task 1',
       subTask2: 'Sub Task 2',
-      measuredTask1: 'Measured Task 1',
-      measuredTask2: 'Measured Task 2',
-      operationStatus: 'Operation Status',
-      componentClassDropdown: 'Component Class',
-      timeInterval: 'Time Interval (days)',
-      requiredTime: 'Required Time (min)',
-      recommendedQuantity: 'Recommended Quantity',
+      measuredTask1: 'Meas. Task 1',
+      measuredTask2: 'Meas. Task 2',
+      operationStatus: 'Op. Status',
+      timeInterval: 'Interval (d)',
+      requiredTime: 'Time (min)',
+      recommendedQuantity: 'Quantity',
       unit: 'Unit',
-      comment: 'Comment/Question',
-      // Reference data
+      comment: 'Comment',
+      // Reference
       particle: 'Particle',
       moisture: 'Moisture',
       vibration: 'Vibration',
@@ -132,304 +135,257 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
 
   const t = labels[language];
 
-  const startEdit = (index: number) => {
-    setEditingIndex(index);
-    setEditedData({ ...equipment[index] });
+  const addRow = () => {
+    const newRows = [...currentRows, { id: `row-${Date.now()}` }];
+    const newMap = new Map(equipmentRows);
+    newMap.set(currentPage, newRows);
+    setEquipmentRows(newMap);
   };
 
-  const cancelEdit = () => {
-    setEditingIndex(null);
-    setEditedData(null);
+  const deleteRow = (rowIndex: number) => {
+    if (currentRows.length <= 1) return; // Keep at least one row
+    const newRows = currentRows.filter((_, i) => i !== rowIndex);
+    const newMap = new Map(equipmentRows);
+    newMap.set(currentPage, newRows);
+    setEquipmentRows(newMap);
   };
 
-  const saveEdit = () => {
-    if (editingIndex !== null && editedData) {
-      const updated = [...equipment];
-      updated[editingIndex] = editedData;
-      onUpdate(updated);
-      setEditingIndex(null);
-      setEditedData(null);
-    }
-  };
-
-  const updateField = (field: keyof EditableEquipment, value: any) => {
-    if (!editedData) return;
+  const updateCell = (rowIndex: number, field: keyof WorkingRow, value: string) => {
+    const newRows = [...currentRows];
+    newRows[rowIndex] = { ...newRows[rowIndex], [field]: value };
     
-    const updated = { ...editedData, [field]: value };
-    
-    // Auto-fill logic
+    // Auto-fill LIS number when lubricant selected
     if (field === 'recommendedLubricant') {
-      // Find LIS number for selected lubricant
       const lube = menuData.lubricants.find(l => l.name === value);
       if (lube) {
-        updated.lubricantLIS = lube.lis;
+        newRows[rowIndex].lubricantLIS = lube.lis;
       }
     }
     
-    setEditedData(updated);
+    const newMap = new Map(equipmentRows);
+    newMap.set(currentPage, newRows);
+    setEquipmentRows(newMap);
   };
 
-  const toggleRow = (index: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedRows(newExpanded);
-  };
-
-  const renderField = (label: string, field: keyof EditableEquipment, type: 'text' | 'number' | 'dropdown' = 'text', options?: string[]) => {
-    const value = editedData?.[field];
-    const isEditing = editingIndex !== null;
-
-    if (!isEditing) {
-      return (
-        <div className="mb-3">
-          <div className="text-xs font-semibold text-gray-500 mb-1">{label}</div>
-          <div className="text-sm text-gray-900">{value || '-'}</div>
-        </div>
-      );
-    }
+  const renderCell = (rowIndex: number, field: keyof WorkingRow, width: string, type: 'text' | 'dropdown' = 'text', options?: string[]) => {
+    const value = currentRows[rowIndex]?.[field] || '';
 
     if (type === 'dropdown' && options) {
       return (
-        <div className="mb-3">
-          <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
-          <select
-            value={String(value || '')}
-            onChange={(e) => updateField(field, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-          >
-            <option value="">-</option>
-            {options.map((opt, i) => (
-              <option key={i} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={value}
+          onChange={(e) => updateCell(rowIndex, field, e.target.value)}
+          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          style={{ width }}
+        >
+          <option value="">-</option>
+          {options.map((opt, i) => (
+            <option key={i} value={opt}>{opt}</option>
+          ))}
+        </select>
       );
     }
 
     return (
-      <div className="mb-3">
-        <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
-        <input
-          type={type}
-          value={String(value || '')}
-          onChange={(e) => updateField(field, type === 'number' ? Number(e.target.value) : e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-        />
-      </div>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => updateCell(rowIndex, field, e.target.value)}
+        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        style={{ width }}
+      />
     );
   };
 
   return (
     <div className="space-y-4">
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-        <h2 className="text-2xl font-bold text-gray-900">{clientName}</h2>
-        <p className="text-sm text-gray-600 mt-1">{equipment.length} equipment items</p>
+      {/* Header with Pagination */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+            disabled={currentPage === 0}
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              {currentEquipment?.assetNumber || 'No Asset #'}
+            </h2>
+            <p className="text-sm text-gray-600">
+              Equipment {currentPage + 1} of {equipment.length}
+            </p>
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(Math.min(equipment.length - 1, currentPage + 1))}
+            disabled={currentPage === equipment.length - 1}
+            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
+        <button
+          onClick={addRow}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Plus size={16} />
+          Add Row
+        </button>
       </div>
 
-      {equipment.map((eq, index) => {
-        const isExpanded = expandedRows.has(index);
-        const isEditing = editingIndex === index;
-        const data = isEditing ? editedData! : eq;
-
-        return (
-          <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            {/* Header Row */}
-            <div
-              className="p-4 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
-              onClick={() => !isEditing && toggleRow(index)}
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="text-gray-400">
-                  {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-lg text-gray-900">{eq.assetNumber || 'No Asset #'}</div>
-                  <div className="text-sm text-gray-600">{eq.assetDescription || 'No description'}</div>
-                </div>
-                {eq.criticality && (
-                  <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
-                    {eq.criticality}
-                  </span>
-                )}
-                {eq.status && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                    {eq.status}
-                  </span>
-                )}
-              </div>
-              
-              {!isEditing && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEdit(index);
-                  }}
-                  className="ml-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Edit2 size={16} />
-                  Edit
-                </button>
-              )}
-
-              {isEditing && (
-                <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      saveEdit();
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    <Save size={16} />
-                    Save
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cancelEdit();
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                  >
-                    <X size={16} />
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Expanded Content */}
-            {isExpanded && (
-              <div className="border-t border-gray-200 bg-gray-50 p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left Column - Editable Fields (A-AD) */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-300">
-                      Editable Fields
-                    </h3>
-
-                    {/* Basic Info */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Basic Information</h4>
-                      {renderField(t.criticality, 'criticality', 'dropdown', ['Critical', 'Complicated', 'Critical & Complicated'])}
-                      {renderField(t.status, 'status', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}
-                      {renderField(t.area, 'area')}
-                      {renderField(t.assetNumber, 'assetNumber')}
-                      {renderField(t.assetDescription, 'assetDescription')}
-                    </div>
-
-                    {/* Component Info */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Component Information</h4>
-                      {renderField(t.componentClass, 'componentClass')}
-                      {renderField(t.subComponent, 'subComponent')}
-                      {renderField(t.subComponentDescription, 'subComponentDescription')}
-                      {renderField(t.componentClassDropdown, 'componentClassDropdown', 'dropdown', 
-                        language === 'fr' ? menuData.componentClass.fr : menuData.componentClass.en)}
-                    </div>
-
-                    {/* Failure Modes */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Failure Modes</h4>
-                      {renderField(t.failureMode1, 'failureMode1')}
-                      {renderField(t.failureMode2, 'failureMode2')}
-                      {renderField(t.failureMode3, 'failureMode3')}
-                      {renderField(t.failureMode4, 'failureMode4')}
-                      {renderField(t.failureMode5, 'failureMode5')}
-                    </div>
-
-                    {/* Lubrication */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Lubrication</h4>
-                      {renderField(t.currentLubricant, 'currentLubricant')}
-                      {renderField(t.recommendedLubricant, 'recommendedLubricant', 'dropdown', 
-                        menuData.lubricants.map(l => l.name))}
-                      {renderField(t.lubricantLIS, 'lubricantLIS')}
-                      {renderField(t.numberOfPoints, 'numberOfPoints', 'number')}
-                    </div>
-
-                    {/* Procedures */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Procedures & Tasks</h4>
-                      {renderField(t.procedureNumber, 'procedureNumber')}
-                      {renderField(t.procedure, 'procedure')}
-                      {renderField(t.subTask1, 'subTask1')}
-                      {renderField(t.subTask2, 'subTask2')}
-                      {renderField(t.measuredTask1, 'measuredTask1')}
-                      {renderField(t.measuredTask2, 'measuredTask2')}
-                      {renderField(t.operationStatus, 'operationStatus')}
-                    </div>
-
-                    {/* Time & Quantity */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Time & Quantity</h4>
-                      {renderField(t.timeInterval, 'timeInterval', 'number')}
-                      {renderField(t.requiredTime, 'requiredTime', 'number')}
-                      {renderField(t.recommendedQuantity, 'recommendedQuantity', 'number')}
-                      {renderField(t.unit, 'unit', 'dropdown', language === 'fr' ? menuData.units.fr : menuData.units.en)}
-                    </div>
-
-                    {/* Comments */}
-                    <div className="bg-white p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Comments</h4>
-                      {renderField(t.comment, 'comment')}
-                    </div>
-                  </div>
-
-                  {/* Right Column - Reference Data (Read-Only) */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-300">
-                      Reference Data (Read-Only)
-                    </h3>
-
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <h4 className="font-semibold text-blue-900 mb-3">Environmental Conditions</h4>
-                      <div className="space-y-2">
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.particle}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.particle || '-'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.moisture}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.moisture || '-'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.vibration}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.vibration || '-'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.orientation}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.orientation || '-'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.temperature}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.temperature || '-'}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-blue-600">{t.runtime}</div>
-                          <div className="text-sm text-blue-900">{data.conditions?.runtime || '-'}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-100 p-4 rounded-lg">
-                      <h4 className="font-semibold text-gray-700 mb-3">Collection Info</h4>
-                      <div className="space-y-2 text-sm">
-                        <div><span className="font-semibold">User:</span> {data.user || '-'}</div>
-                        <div><span className="font-semibold">Date/Time:</span> {data.dateTime || '-'}</div>
-                        <div><span className="font-semibold">Identical to:</span> {data.idemTo || '-'}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* Split View: Left (Editable) | Right (Reference) */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="grid grid-cols-2 divide-x divide-gray-200">
+          {/* LEFT SIDE - Editable Fields */}
+          <div className="p-4 overflow-x-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 sticky left-0 bg-white">
+              Editable Fields (Fill as needed)
+            </h3>
+            
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left font-semibold sticky left-0 bg-gray-100" style={{width: '30px'}}>#</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.criticality}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.status}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.area}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.componentClass}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subComponent}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.subComponentDesc}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.failureMode1}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.failureMode2}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.currentLubricant}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.recommendedLubricant}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.lubricantLIS}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.numberOfPoints}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.procedureNumber}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.procedure}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subTask1}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subTask2}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.measuredTask1}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.measuredTask2}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.operationStatus}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.timeInterval}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.requiredTime}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.recommendedQuantity}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.unit}</th>
+                  <th className="p-2 text-left font-semibold" style={{width: '150px'}}>{t.comment}</th>
+                  <th className="p-2 sticky right-0 bg-gray-100" style={{width: '40px'}}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRows.map((row, rowIndex) => (
+                  <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="p-2 sticky left-0 bg-white text-gray-500 font-semibold">{rowIndex + 1}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'criticality', '80px', 'dropdown', ['Critical', 'Complicated', 'Critical & Complicated'])}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'status', '100px', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'area', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'componentClass', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'subComponent', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'subComponentDescription', '120px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'failureMode1', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'failureMode2', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'currentLubricant', '120px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'recommendedLubricant', '120px', 'dropdown', menuData.lubricants.map(l => l.name))}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'lubricantLIS', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'numberOfPoints', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'procedureNumber', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'procedure', '120px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'subTask1', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'subTask2', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'measuredTask1', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'measuredTask2', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'operationStatus', '100px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'timeInterval', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'requiredTime', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'recommendedQuantity', '80px')}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'unit', '80px', 'dropdown', language === 'fr' ? menuData.units.fr : menuData.units.en)}</td>
+                    <td className="p-2">{renderCell(rowIndex, 'comment', '150px')}</td>
+                    <td className="p-2 sticky right-0 bg-white">
+                      {currentRows.length > 1 && (
+                        <button
+                          onClick={() => deleteRow(rowIndex)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        );
-      })}
+
+          {/* RIGHT SIDE - Reference Data (Read-Only) */}
+          <div className="p-4 bg-blue-50">
+            <h3 className="text-lg font-bold text-blue-900 mb-4">
+              Reference Data (From iPad Collection)
+            </h3>
+
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <h4 className="font-semibold text-gray-900 mb-3">Equipment Info</h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-semibold">Asset #:</span> {currentEquipment?.assetNumber || '-'}</div>
+                  <div><span className="font-semibold">Description:</span> {currentEquipment?.assetDescription || '-'}</div>
+                  <div><span className="font-semibold">Area:</span> {currentEquipment?.area || '-'}</div>
+                  <div><span className="font-semibold">Component:</span> {currentEquipment?.component || '-'}</div>
+                  {currentEquipment?.subComponent && (
+                    <div><span className="font-semibold">Sub-Component:</span> {currentEquipment.subComponent}</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <h4 className="font-semibold text-gray-900 mb-3">Environmental Conditions</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.particle}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.particle || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.moisture}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.moisture || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.vibration}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.vibration || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.orientation}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.orientation || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.temperature}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.temperature || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-blue-600">{t.runtime}</div>
+                    <div className="text-blue-900">{currentEquipment?.conditions?.runtime || '-'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <h4 className="font-semibold text-gray-900 mb-3">Collection Data</h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-semibold">User:</span> {currentEquipment?.user || '-'}</div>
+                  <div><span className="font-semibold">Date/Time:</span> {currentEquipment?.dateTime || '-'}</div>
+                  <div><span className="font-semibold">Status:</span> {currentEquipment?.status || '-'}</div>
+                  {currentEquipment?.idemTo && (
+                    <div><span className="font-semibold">Identical to:</span> {currentEquipment.idemTo}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
