@@ -60,14 +60,13 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
   const t = texts[language];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <Settings className="text-white" size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
+    <div className="bg-white rounded-2xl shadow-2xl p-8 w-full">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+          <Settings className="text-white" size={32} />
         </div>
+        <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
+      </div>
 
         <div className="space-y-6">
           {/* Question 1: Language */}
