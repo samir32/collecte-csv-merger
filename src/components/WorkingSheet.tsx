@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { ProcessedEquipment } from '../utils/excel-processor';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { CsvRow, ColumnInfo } from '../utils/csv-logic';
 import menuData from '../data/menu-dropdowns.json';
 
 interface WorkingSheetProps {
   equipment: ProcessedEquipment[];
+  rawData: CsvRow[];
+  schema: ColumnInfo[];
   clientName: string;
   language: 'en' | 'fr';
   onUpdate: (updatedEquipment: ProcessedEquipment[]) => void;
@@ -12,20 +15,14 @@ interface WorkingSheetProps {
 
 interface WorkingRow {
   id: string;
-  // Left side - Editable fields (A-AD / Columns 1-30)
   criticality?: string;
   status?: string;
   area?: string;
-  assetNumber?: string;
-  assetDescription?: string;
   componentClass?: string;
   subComponent?: string;
   subComponentDescription?: string;
   failureMode1?: string;
   failureMode2?: string;
-  failureMode3?: string;
-  failureMode4?: string;
-  failureMode5?: string;
   currentLubricant?: string;
   recommendedLubricant?: string;
   lubricantLIS?: string;
@@ -37,7 +34,6 @@ interface WorkingRow {
   measuredTask1?: string;
   measuredTask2?: string;
   operationStatus?: string;
-  componentClassDropdown?: string;
   timeInterval?: string;
   requiredTime?: string;
   recommendedQuantity?: string;
@@ -45,13 +41,14 @@ interface WorkingRow {
   comment?: string;
 }
 
-export function WorkingSheet({ equipment, clientName, language, onUpdate }: WorkingSheetProps) {
+export function WorkingSheet({ equipment, rawData, schema, clientName, language, onUpdate }: WorkingSheetProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [equipmentRows, setEquipmentRows] = useState<Map<number, WorkingRow[]>>(
     new Map(equipment.map((_, index) => [index, [{ id: `row-0` }]]))
   );
 
   const currentEquipment = equipment[currentPage];
+  const currentRawData = rawData[currentPage];
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
 
   const labels = {
@@ -59,16 +56,11 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
       criticality: 'CRITICITÉ',
       status: 'Statut',
       area: 'Secteur',
-      assetNumber: "N° d'équip.",
-      assetDescription: "Nom d'équip.",
       componentClass: 'Classe',
       subComponent: 'Sous-comp.',
       subComponentDesc: 'Desc.',
       failureMode1: 'Défaillance 1',
       failureMode2: 'Défaillance 2',
-      failureMode3: 'Défaillance 3',
-      failureMode4: 'Défaillance 4',
-      failureMode5: 'Défaillance 5',
       currentLubricant: 'Lub. actuel',
       recommendedLubricant: 'Lub. recommandé',
       lubricantLIS: 'LIS',
@@ -85,7 +77,6 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
       recommendedQuantity: 'Quantité',
       unit: 'Unité',
       comment: 'Commentaire',
-      // Reference
       particle: 'Particle',
       moisture: 'Humidité',
       vibration: 'Vibration',
@@ -97,16 +88,11 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
       criticality: 'PRIORITY',
       status: 'Status',
       area: 'Area',
-      assetNumber: 'Equip. #',
-      assetDescription: 'Equip. Name',
       componentClass: 'Class',
       subComponent: 'Sub-comp.',
       subComponentDesc: 'Desc.',
       failureMode1: 'Failure 1',
       failureMode2: 'Failure 2',
-      failureMode3: 'Failure 3',
-      failureMode4: 'Failure 4',
-      failureMode5: 'Failure 5',
       currentLubricant: 'Current Lube',
       recommendedLubricant: 'Rec. Lube',
       lubricantLIS: 'LIS',
@@ -123,7 +109,6 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
       recommendedQuantity: 'Quantity',
       unit: 'Unit',
       comment: 'Comment',
-      // Reference
       particle: 'Particle',
       moisture: 'Moisture',
       vibration: 'Vibration',
@@ -143,7 +128,7 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
   };
 
   const deleteRow = (rowIndex: number) => {
-    if (currentRows.length <= 1) return; // Keep at least one row
+    if (currentRows.length <= 1) return;
     const newRows = currentRows.filter((_, i) => i !== rowIndex);
     const newMap = new Map(equipmentRows);
     newMap.set(currentPage, newRows);
@@ -154,7 +139,6 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
     const newRows = [...currentRows];
     newRows[rowIndex] = { ...newRows[rowIndex], [field]: value };
     
-    // Auto-fill LIS number when lubricant selected
     if (field === 'recommendedLubricant') {
       const lube = menuData.lubricants.find(l => l.name === value);
       if (lube) {
@@ -205,7 +189,7 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
           <button
             onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
             disabled={currentPage === 0}
-            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
@@ -222,7 +206,7 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
           <button
             onClick={() => setCurrentPage(Math.min(equipment.length - 1, currentPage + 1))}
             disabled={currentPage === equipment.length - 1}
-            className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronRight size={20} />
           </button>
@@ -237,75 +221,75 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
         </button>
       </div>
 
-      {/* Split View: Left (Editable) | Right (Reference) */}
+      {/* Split View */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-gray-200">
           {/* LEFT SIDE - Editable Fields */}
-          <div className="p-4 overflow-x-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 sticky left-0 bg-white">
+          <div className="p-4 overflow-x-auto max-h-[600px] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 sticky top-0 left-0 bg-white z-10 pb-2">
               Editable Fields (Fill as needed)
             </h3>
             
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 text-left font-semibold sticky left-0 bg-gray-100" style={{width: '30px'}}>#</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.criticality}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.status}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.area}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.componentClass}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subComponent}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.subComponentDesc}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.failureMode1}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.failureMode2}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.currentLubricant}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.recommendedLubricant}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.lubricantLIS}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.numberOfPoints}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.procedureNumber}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '120px'}}>{t.procedure}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subTask1}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.subTask2}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.measuredTask1}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.measuredTask2}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '100px'}}>{t.operationStatus}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.timeInterval}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.requiredTime}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.recommendedQuantity}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '80px'}}>{t.unit}</th>
-                  <th className="p-2 text-left font-semibold" style={{width: '150px'}}>{t.comment}</th>
-                  <th className="p-2 sticky right-0 bg-gray-100" style={{width: '40px'}}></th>
+            <table className="w-full text-xs border-collapse">
+              <thead className="sticky top-12 bg-gray-100 z-10">
+                <tr>
+                  <th className="p-2 text-left font-semibold border sticky left-0 bg-gray-100 z-20" style={{minWidth: '30px'}}>#</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.criticality}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.status}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.area}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.componentClass}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.subComponent}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '150px'}}>{t.subComponentDesc}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.failureMode1}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.failureMode2}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '140px'}}>{t.currentLubricant}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '140px'}}>{t.recommendedLubricant}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.lubricantLIS}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '80px'}}>{t.numberOfPoints}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.procedureNumber}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '150px'}}>{t.procedure}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.subTask1}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.subTask2}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.measuredTask1}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.measuredTask2}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.operationStatus}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.timeInterval}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.requiredTime}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.recommendedQuantity}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '80px'}}>{t.unit}</th>
+                  <th className="p-2 text-left font-semibold border" style={{minWidth: '200px'}}>{t.comment}</th>
+                  <th className="p-2 border sticky right-0 bg-gray-100 z-20" style={{minWidth: '50px'}}>Del</th>
                 </tr>
               </thead>
               <tbody>
                 {currentRows.map((row, rowIndex) => (
-                  <tr key={row.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="p-2 sticky left-0 bg-white text-gray-500 font-semibold">{rowIndex + 1}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'criticality', '80px', 'dropdown', ['Critical', 'Complicated', 'Critical & Complicated'])}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'status', '100px', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'area', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'componentClass', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'subComponent', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'subComponentDescription', '120px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'failureMode1', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'failureMode2', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'currentLubricant', '120px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'recommendedLubricant', '120px', 'dropdown', menuData.lubricants.map(l => l.name))}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'lubricantLIS', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'numberOfPoints', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'procedureNumber', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'procedure', '120px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'subTask1', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'subTask2', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'measuredTask1', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'measuredTask2', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'operationStatus', '100px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'timeInterval', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'requiredTime', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'recommendedQuantity', '80px')}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'unit', '80px', 'dropdown', language === 'fr' ? menuData.units.fr : menuData.units.en)}</td>
-                    <td className="p-2">{renderCell(rowIndex, 'comment', '150px')}</td>
-                    <td className="p-2 sticky right-0 bg-white">
+                  <tr key={row.id} className="hover:bg-gray-50">
+                    <td className="p-2 border sticky left-0 bg-white z-10 text-gray-500 font-semibold">{rowIndex + 1}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'criticality', '100px', 'dropdown', ['Critical', 'Complicated', 'Critical & Complicated'])}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'status', '120px', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'area', '100px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'componentClass', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'subComponent', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'subComponentDescription', '150px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'failureMode1', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'failureMode2', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'currentLubricant', '140px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'recommendedLubricant', '140px', 'dropdown', menuData.lubricants.map(l => l.name))}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'lubricantLIS', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'numberOfPoints', '80px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'procedureNumber', '100px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'procedure', '150px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'subTask1', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'subTask2', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'measuredTask1', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'measuredTask2', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'operationStatus', '120px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'timeInterval', '100px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'requiredTime', '100px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'recommendedQuantity', '100px')}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'unit', '80px', 'dropdown', language === 'fr' ? menuData.units.fr : menuData.units.en)}</td>
+                    <td className="p-2 border">{renderCell(rowIndex, 'comment', '200px')}</td>
+                    <td className="p-2 border sticky right-0 bg-white z-10 text-center">
                       {currentRows.length > 1 && (
                         <button
                           onClick={() => deleteRow(rowIndex)}
@@ -322,66 +306,139 @@ export function WorkingSheet({ equipment, clientName, language, onUpdate }: Work
           </div>
 
           {/* RIGHT SIDE - Reference Data (Read-Only) */}
-          <div className="p-4 bg-blue-50">
-            <h3 className="text-lg font-bold text-blue-900 mb-4">
+          <div className="p-4 bg-blue-50 overflow-auto max-h-[600px]">
+            <h3 className="text-lg font-bold text-blue-900 mb-4 sticky top-0 bg-blue-50 pb-2">
               Reference Data (From iPad Collection)
             </h3>
 
             <div className="space-y-4">
               <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-3">Equipment Info</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-semibold">Asset #:</span> {currentEquipment?.assetNumber || '-'}</div>
-                  <div><span className="font-semibold">Description:</span> {currentEquipment?.assetDescription || '-'}</div>
-                  <div><span className="font-semibold">Area:</span> {currentEquipment?.area || '-'}</div>
-                  <div><span className="font-semibold">Component:</span> {currentEquipment?.component || '-'}</div>
-                  {currentEquipment?.subComponent && (
-                    <div><span className="font-semibold">Sub-Component:</span> {currentEquipment.subComponent}</div>
-                  )}
-                </div>
+                <h4 className="font-semibold text-gray-900 mb-3">Raw iPad Data</h4>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Asset Number:</td>
+                      <td className="py-2">{currentEquipment?.assetNumber || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Asset Description:</td>
+                      <td className="py-2">{currentEquipment?.assetDescription || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Area:</td>
+                      <td className="py-2">{currentEquipment?.area || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Component:</td>
+                      <td className="py-2">{currentEquipment?.component || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Sub-Component:</td>
+                      <td className="py-2">{currentEquipment?.subComponent || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">User:</td>
+                      <td className="py-2">{currentEquipment?.user || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Date/Time:</td>
+                      <td className="py-2">{currentEquipment?.dateTime || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Done?:</td>
+                      <td className="py-2">{currentEquipment?.status || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">CRIT #:</td>
+                      <td className="py-2">{currentEquipment?.isCritical ? 'C' : '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Complicated:</td>
+                      <td className="py-2">{currentEquipment?.isComplicated ? 'Yes' : '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">Identical to:</td>
+                      <td className="py-2">{currentEquipment?.idemTo || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-gray-600">UniqueRowID:</td>
+                      <td className="py-2">{currentRawData?.['UniqueRowID'] || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               <div className="bg-white p-4 rounded-lg shadow-sm">
                 <h4 className="font-semibold text-gray-900 mb-3">Environmental Conditions</h4>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.particle}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.particle || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.moisture}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.moisture || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.vibration}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.vibration || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.orientation}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.orientation || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.temperature}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.temperature || '-'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-blue-600">{t.runtime}</div>
-                    <div className="text-blue-900">{currentEquipment?.conditions?.runtime || '-'}</div>
-                  </div>
-                </div>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.particle}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.particle || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.moisture}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.moisture || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.vibration}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.vibration || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.orientation}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.orientation || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.temperature}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.temperature || '-'}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.runtime}:</td>
+                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.runtime || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-3">Collection Data</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-semibold">User:</span> {currentEquipment?.user || '-'}</div>
-                  <div><span className="font-semibold">Date/Time:</span> {currentEquipment?.dateTime || '-'}</div>
-                  <div><span className="font-semibold">Status:</span> {currentEquipment?.status || '-'}</div>
-                  {currentEquipment?.idemTo && (
-                    <div><span className="font-semibold">Identical to:</span> {currentEquipment.idemTo}</div>
-                  )}
+              {/* All Raw CSV Data */}
+              {currentRawData && schema && (
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-3">All iPad Collection Data</h4>
+                  <div className="space-y-1 max-h-96 overflow-auto">
+                    {schema.map((col, idx) => {
+                      const value = currentRawData[col.internalKey];
+                      if (!value || String(value).trim() === '') return null;
+                      
+                      return (
+                        <div key={idx} className="grid grid-cols-2 gap-2 text-xs py-1 border-b border-gray-100">
+                          <div className="font-semibold text-gray-600 break-words">
+                            {col.displayName}
+                          </div>
+                          <div className="text-gray-900 break-words">
+                            {String(value)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Equipment Features if any */}
+              {Object.values(currentEquipment?.features || {}).some(v => v) && (
+                <div className="bg-white p-4 rounded-lg shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-3">Equipment Features</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(currentEquipment.features).map(([key, value]) => 
+                      value ? (
+                        <span key={key} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                      ) : null
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
