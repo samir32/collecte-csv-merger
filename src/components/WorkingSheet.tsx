@@ -305,141 +305,259 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
             </table>
           </div>
 
-          {/* RIGHT SIDE - Reference Data (Read-Only) */}
+          {/* RIGHT SIDE - Organized Reference Data like Excel */}
           <div className="p-4 bg-blue-50 overflow-auto max-h-[600px]">
             <h3 className="text-lg font-bold text-blue-900 mb-4 sticky top-0 bg-blue-50 pb-2">
               Reference Data (From iPad Collection)
             </h3>
 
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-3">Raw iPad Data</h4>
-                <table className="w-full text-xs">
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Asset Number:</td>
-                      <td className="py-2">{currentEquipment?.assetNumber || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Asset Description:</td>
-                      <td className="py-2">{currentEquipment?.assetDescription || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Area:</td>
-                      <td className="py-2">{currentEquipment?.area || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Component:</td>
-                      <td className="py-2">{currentEquipment?.component || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Sub-Component:</td>
-                      <td className="py-2">{currentEquipment?.subComponent || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">User:</td>
-                      <td className="py-2">{currentEquipment?.user || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Date/Time:</td>
-                      <td className="py-2">{currentEquipment?.dateTime || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Done?:</td>
-                      <td className="py-2">{currentEquipment?.status || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">CRIT #:</td>
-                      <td className="py-2">{currentEquipment?.isCritical ? 'C' : '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Complicated:</td>
-                      <td className="py-2">{currentEquipment?.isComplicated ? 'Yes' : '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">Identical to:</td>
-                      <td className="py-2">{currentEquipment?.idemTo || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-gray-600">UniqueRowID:</td>
-                      <td className="py-2">{currentRawData?.['UniqueRowID'] || '-'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg shadow-sm">
-                <h4 className="font-semibold text-gray-900 mb-3">Environmental Conditions</h4>
-                <table className="w-full text-xs">
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.particle}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.particle || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.moisture}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.moisture || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.vibration}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.vibration || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.orientation}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.orientation || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.temperature}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.temperature || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-2 pr-4 font-semibold text-blue-600">{t.runtime}:</td>
-                      <td className="py-2 text-blue-900">{currentEquipment?.conditions?.runtime || '-'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* All Raw CSV Data */}
-              {currentRawData && schema && (
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-900 mb-3">All iPad Collection Data</h4>
-                  <div className="space-y-1 max-h-96 overflow-auto">
-                    {schema.map((col, idx) => {
-                      const value = currentRawData[col.internalKey];
-                      if (!value || String(value).trim() === '') return null;
-                      
-                      return (
-                        <div key={idx} className="grid grid-cols-2 gap-2 text-xs py-1 border-b border-gray-100">
-                          <div className="font-semibold text-gray-600 break-words">
-                            {col.displayName}
-                          </div>
-                          <div className="text-gray-900 break-words">
-                            {String(value)}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+            {currentRawData && (
+              <div className="space-y-3">
+                {/* Header Info */}
+                <div className="bg-gray-800 text-white p-2 rounded-lg">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="font-bold py-1">Asset Number</td>
+                        <td className="font-bold py-1">UniqueRowID</td>
+                        <td className="font-bold py-1">User</td>
+                        <td className="font-bold py-1">Date/Time</td>
+                        <td className="font-bold py-1">Done?</td>
+                        <td className="font-bold py-1">CRIT #</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1">{currentRawData['Asset number'] || '-'}</td>
+                        <td className="py-1">{currentRawData['UniqueRowID'] || '""'}</td>
+                        <td className="py-1">{currentRawData['User'] || '-'}</td>
+                        <td className="py-1">{currentRawData['Date/Time'] || '-'}</td>
+                        <td className="py-1">{currentRawData['Done?'] || '-'}</td>
+                        <td className="py-1">{currentRawData['CRIT #'] || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-              )}
 
-              {/* Equipment Features if any */}
-              {Object.values(currentEquipment?.features || {}).some(v => v) && (
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <h4 className="font-semibold text-gray-900 mb-3">Equipment Features</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(currentEquipment.features).map(([key, value]) => 
-                      value ? (
-                        <span key={key} className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
-                      ) : null
+                {/* Asset Description Row */}
+                <div className="bg-gray-800 text-white p-2 rounded-lg">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="font-bold py-1">Asset description</td>
+                        <td className="font-bold py-1">Asset description2</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1">{currentRawData['Asset description'] || '-'}</td>
+                        <td className="py-1">{currentRawData['Asset description2'] || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Motor Section (if Motor data exists) */}
+                {currentRawData['Motor'] && (
+                  <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
+                      Motor
+                    </div>
+                    <table className="w-full text-xs">
+                      <tbody>
+                        <tr className="border-b border-gray-200">
+                          <td className="font-bold px-2 py-1 bg-gray-50">HP</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">RPM</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">Current</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">DE BRG</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">NDE BRG Alternate</td>
+                        </tr>
+                        <tr>
+                          <td className="px-2 py-1">{currentRawData['HP'] || '-'}</td>
+                          <td className="px-2 py-1">{currentRawData['RPM'] || '-'}</td>
+                          <td className="px-2 py-1">{currentRawData['Current'] || '-'}</td>
+                          <td className="px-2 py-1">{currentRawData['DE Bearing #'] || '-'}</td>
+                          <td className="px-2 py-1">{currentRawData['DE BRG Alternate'] || '-'}</td>
+                        </tr>
+                        {(currentRawData['Frame'] || currentRawData['Orientation']) && (
+                          <>
+                            <tr className="border-t border-gray-200">
+                              <td className="font-bold px-2 py-1 bg-gray-50">Frame</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">Orientation</td>
+                              <td colSpan={3}></td>
+                            </tr>
+                            <tr>
+                              <td className="px-2 py-1">{currentRawData['Frame'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['Orientation'] || '-'}</td>
+                              <td colSpan={3}></td>
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Component Section */}
+                <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+                  <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
+                    Component
+                  </div>
+                  <div className="p-2 text-xs space-y-1">
+                    {currentRawData['Motor'] && <div><span className="font-bold">Motor:</span> {currentRawData['Motor']}</div>}
+                    {currentRawData['Compressor'] && <div><span className="font-bold">Compressor:</span> {currentRawData['Compressor']}</div>}
+                    {currentRawData['Gearbox'] && <div><span className="font-bold">Gearbox:</span> {currentRawData['Gearbox']}</div>}
+                    {currentRawData['Pump'] && <div><span className="font-bold">Pump:</span> {currentRawData['Pump']}</div>}
+                    {currentRawData['Bearing'] && <div><span className="font-bold">Bearing:</span> {currentRawData['Bearing']}</div>}
+                    {currentRawData['Sub-Component descriptor'] && (
+                      <div><span className="font-bold">Sub-Component descriptor:</span> {currentRawData['Sub-Component descriptor']}</div>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Additional Component Details (Bearing, Coupling, etc.) */}
+                {(currentRawData['DE BRG / Coupling Type'] || currentRawData['NDE BRG / Coupling Type'] || currentRawData['NDE Bearing #'] || currentRawData['Vol. (L)']) && (
+                  <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
+                      Bearing / Coupling
+                    </div>
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {(currentRawData['DE BRG / Coupling Type'] || currentRawData['NDE BRG / Coupling Type']) && (
+                          <>
+                            <tr className="border-b border-gray-200">
+                              <td className="font-bold px-2 py-1 bg-gray-50">DE BRG / Coupling Type</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">NDE BRG / Coupling Type</td>
+                            </tr>
+                            <tr>
+                              <td className="px-2 py-1">{currentRawData['DE BRG / Coupling Type'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['NDE BRG / Coupling Type'] || '-'}</td>
+                            </tr>
+                          </>
+                        )}
+                        {currentRawData['NDE Bearing #'] && (
+                          <>
+                            <tr className="border-t border-gray-200">
+                              <td className="font-bold px-2 py-1 bg-gray-50">NDE Bearing #</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">Vol. (L)</td>
+                            </tr>
+                            <tr>
+                              <td className="px-2 py-1">{currentRawData['NDE Bearing #'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['Vol. (L)'] || '-'}</td>
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Sub-Component Details */}
+                {(currentRawData['Sub-Comp RPM'] || currentRawData['Notes'] || currentRawData['Idem Sh. d'] || currentRawData['Sev drn']) && (
+                  <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
+                      Sub-Component Details
+                    </div>
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {(currentRawData['Sub-Comp RPM'] || currentRawData['Notes'] || currentRawData['Idem Sh. d']) && (
+                          <>
+                            <tr className="border-b border-gray-200">
+                              <td className="font-bold px-2 py-1 bg-gray-50">Sub-Comp RPM</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">Notes</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">Idem Sh. d</td>
+                            </tr>
+                            <tr>
+                              <td className="px-2 py-1">{currentRawData['Sub-Comp RPM'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['Notes'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['Idem Sh. d'] || '-'}</td>
+                            </tr>
+                          </>
+                        )}
+                        {currentRawData['D'] && (
+                          <>
+                            <tr className="border-t border-gray-200">
+                              <td className="font-bold px-2 py-1 bg-gray-50">D</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">B</td>
+                              <td className="font-bold px-2 py-1 bg-gray-50">H</td>
+                            </tr>
+                            <tr>
+                              <td className="px-2 py-1">{currentRawData['D'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['B'] || '-'}</td>
+                              <td className="px-2 py-1">{currentRawData['H'] || '-'}</td>
+                            </tr>
+                          </>
+                        )}
+                        {currentRawData['Sev drn'] && (
+                          <>
+                            <tr className="border-t border-gray-200">
+                              <td colSpan={3} className="px-2 py-1">
+                                <span className="font-bold">Sev drn:</span> {currentRawData['Sev drn']}
+                              </td>
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Current Level Indicator */}
+                {currentRawData['Current Level Indicator'] && (
+                  <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+                    <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
+                      Current Level
+                    </div>
+                    <div className="p-2 text-xs">
+                      <span className="font-bold">Indicator:</span> {currentRawData['Current Level Indicator']}
+                    </div>
+                  </div>
+                )}
+
+                {/* Idem to (Identical to) */}
+                {currentRawData['*Idem to'] && (
+                  <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-2">
+                    <div className="font-bold text-xs mb-1">*Idem to (Identical to)</div>
+                    <div className="text-xs">{currentRawData['*Idem to']}</div>
+                  </div>
+                )}
+
+                {/* Additional Notes */}
+                {currentRawData['*Additional Notes'] && (
+                  <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-2">
+                    <div className="font-bold text-xs mb-1">Additional Notes</div>
+                    <div className="text-xs">{currentRawData['*Additional Notes']}</div>
+                  </div>
+                )}
+
+                {/* Environmental Conditions */}
+                <div className="bg-blue-100 border-2 border-blue-300 rounded-lg overflow-hidden">
+                  <div className="bg-blue-200 px-2 py-1 font-bold text-xs border-b-2 border-blue-300">
+                    Environmental Conditions
+                  </div>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-blue-200">
+                        <td className="font-bold px-2 py-1 bg-blue-50">Particle</td>
+                        <td className="font-bold px-2 py-1 bg-blue-50">Humidity</td>
+                        <td className="font-bold px-2 py-1 bg-blue-50">Vibration</td>
+                      </tr>
+                      <tr className="border-b border-blue-200">
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.particle || '-'}</td>
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.moisture || '-'}</td>
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.vibration || '-'}</td>
+                      </tr>
+                      <tr className="border-b border-blue-200">
+                        <td className="font-bold px-2 py-1 bg-blue-50">Orientation</td>
+                        <td className="font-bold px-2 py-1 bg-blue-50">Temperature</td>
+                        <td className="font-bold px-2 py-1 bg-blue-50">Runtime</td>
+                      </tr>
+                      <tr>
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.orientation || '-'}</td>
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.temperature || '-'}</td>
+                        <td className="px-2 py-1">{currentEquipment?.conditions?.runtime || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
