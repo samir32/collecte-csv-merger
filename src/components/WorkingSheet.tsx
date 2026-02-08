@@ -126,30 +126,6 @@ export function WorkingSheet({
 
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Autosave key for localStorage
-  const AUTOSAVE_KEY = `workingsheet_autosave_${clientName}`;
-
-  // Autosave whenever equipmentRows changes - save complete session data
-  useEffect(() => {
-    try {
-      // Get the complete session data from parent
-      const sessionData = {
-        timestamp: new Date().toISOString(),
-        equipmentRows: Array.from(equipmentRows.entries()),
-        currentPage,
-        sessionData: {
-          clientName,
-          language,
-          result: { combinedDeduped: rawData, schema },
-          excelResult: { processed: equipment }
-        }
-      };
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(sessionData));
-    } catch (error) {
-      console.error('Error autosaving:', error);
-    }
-  }, [equipmentRows, currentPage]);
-
   // Debug logging
   console.log('WorkingSheet render:', {
     equipmentCount: equipment?.length || 0,
@@ -467,6 +443,7 @@ export function WorkingSheet({
     
     // Clear autosave after successful export
     try {
+      const AUTOSAVE_KEY = `workingsheet_autosave_${clientName}`;
       localStorage.removeItem(AUTOSAVE_KEY);
       console.log('Autosave cleared after export');
     } catch (error) {
