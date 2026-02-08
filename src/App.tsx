@@ -82,6 +82,25 @@ export default function App() {
             allKeys: Object.keys(parsed)
           });
           
+          // VALIDATE: Only show prompt if autosave has complete data
+          if (!parsed.setupConfig || !parsed.result || !parsed.excelResult) {
+            console.warn('⚠️ Autosave is INCOMPLETE - missing core data. Deleting it.');
+            console.log('❌ Missing:', {
+              setupConfig: !parsed.setupConfig,
+              result: !parsed.result,
+              excelResult: !parsed.excelResult
+            });
+            localStorage.removeItem(savedKey);
+            console.log('🗑️ Incomplete autosave deleted.');
+            console.log('💡 To create a valid autosave:');
+            console.log('   1. Load CSV files');
+            console.log('   2. Answer setup questions');
+            console.log('   3. Go to Working Sheet');
+            console.log('   4. Make changes');
+            console.log('   5. Autosave will be created automatically');
+            return;
+          }
+          
           const savedTime = new Date(parsed.timestamp);
           const now = new Date();
           const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
