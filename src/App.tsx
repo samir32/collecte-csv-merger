@@ -56,7 +56,8 @@ export default function App() {
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
-      // Process CSV files (original logic)
+      // Process CSV files (preserveOrder=true by default to match VBA macro behavior)
+      // The VBA macro does NOT sort data ('Call SORTIT' is commented out)
       const processed = await processCsvFiles(files, caseInsensitive);
       setResult(processed);
       
@@ -247,42 +248,33 @@ export default function App() {
             >
               {/* View Mode Toggle */}
               <div className="flex justify-center mb-6">
-                <div className="inline-flex bg-gray-200 rounded-xl p-1.5 shadow-lg gap-1">
+                <div className="flex gap-2 bg-gray-100 p-2 rounded-lg">
                   <button
                     onClick={() => setViewMode('csv')}
-                    style={{minWidth: '140px'}}
-                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
-                      viewMode === 'csv'
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                    }`}
+                    className={viewMode === 'csv' 
+                      ? 'px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg'
+                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-blue-400'
+                    }
                   >
-                    <FileCheck size={20} />
-                    <span className="whitespace-nowrap">CSV View</span>
+                    📄 CSV View
                   </button>
                   <button
                     onClick={() => setViewMode('excel')}
-                    style={{minWidth: '200px'}}
-                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
-                      viewMode === 'excel'
-                        ? 'bg-green-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                    }`}
+                    className={viewMode === 'excel'
+                      ? 'px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg'
+                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-green-400'
+                    }
                   >
-                    <Eye size={20} />
-                    <span className="whitespace-nowrap">Equipment Review</span>
+                    👁️ Equipment Review
                   </button>
                   <button
                     onClick={() => setViewMode('working')}
-                    style={{minWidth: '190px'}}
-                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
-                      viewMode === 'working'
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                    }`}
+                    className={viewMode === 'working'
+                      ? 'px-8 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg'
+                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-purple-400'
+                    }
                   >
-                    <Edit3 size={20} />
-                    <span className="whitespace-nowrap">Working Sheet</span>
+                    ✏️ Working Sheet
                   </button>
                 </div>
               </div>
