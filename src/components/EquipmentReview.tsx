@@ -234,7 +234,7 @@ export function EquipmentReview({ equipment, title }: EquipmentReviewProps) {
                       )}
                       {eq.recommendedLubricant && (
                         <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded">
-                          🛢️ {eq.recommendedLubricant}
+                          {eq.recommendedLubricant}
                         </span>
                       )}
                       {eq.procedureNumber && (
@@ -333,8 +333,8 @@ export function EquipmentReview({ equipment, title }: EquipmentReviewProps) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         {eq.subTask1 && <div>• {eq.subTask1}</div>}
                         {eq.subTask2 && <div>• {eq.subTask2}</div>}
-                        {eq.measuredTask1 && <div>📏 {eq.measuredTask1}</div>}
-                        {eq.measuredTask2 && <div>📏 {eq.measuredTask2}</div>}
+                        {eq.measuredTask1 && <div>• {eq.measuredTask1}</div>}
+                        {eq.measuredTask2 && <div>• {eq.measuredTask2}</div>}
                       </div>
                     </div>
                   )}
