@@ -43,187 +43,30 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('csv');
   const [excelTab, setExcelTab] = useState<ExcelTab>('all');
   const [setupConfig, setSetupConfig] = useState<SetupConfig | null>(null);
-  const [showAutosavePrompt, setShowAutosavePrompt] = useState(false);
-  const [autosaveData, setAutosaveData] = useState<any>(null);
   const [equipmentRows, setEquipmentRows] = useState<Map<number, any[]>>(new Map());
 
-  // Check for autosave on app load
-  useEffect(() => {
-    console.log('🔍 Checking for autosave on app load...');
-    console.log('📦 All localStorage keys:', Object.keys(localStorage));
-    
-    try {
-      // Check all possible autosave keys (we don't know client name yet)
-      const keys = Object.keys(localStorage).filter(k => k.startsWith('workingsheet_autosave_'));
-      console.log('📋 Found autosave keys:', keys);
-      
-      if (keys.length > 0) {
-        // Get the most recent one
-        const savedKey = keys[0]; // For now, use first one found
-        console.log('🔑 Using autosave key:', savedKey);
-        
-        const saved = localStorage.getItem(savedKey);
-        if (saved) {
-          console.log('📦 Found autosave data, size:', saved.length, 'characters');
-          console.log('📦 Parsing JSON...');
-          const parsed = JSON.parse(saved);
-          console.log('✅ Parsed autosave successfully');
-          console.log('📊 Autosave contents:', {
-            timestamp: parsed.timestamp,
-            hasSetupConfig: !!parsed.setupConfig,
-            setupConfig: parsed.setupConfig,
-            hasResult: !!parsed.result,
-            resultRowCount: parsed.result?.combinedDeduped?.length || 0,
-            hasExcelResult: !!parsed.excelResult,
-            excelEquipmentCount: parsed.excelResult?.processed?.length || 0,
-            hasEquipmentRows: !!parsed.equipmentRows,
-            equipmentRowsCount: parsed.equipmentRows?.length || 0,
-            viewMode: parsed.viewMode,
-            allKeys: Object.keys(parsed)
-          });
-          
-          // VALIDATE: Only show prompt if autosave has complete data
-          if (!parsed.setupConfig || !parsed.result || !parsed.excelResult) {
-            console.warn('⚠️ Autosave is INCOMPLETE - missing core data. Deleting it.');
-            console.log('❌ Missing:', {
-              setupConfig: !parsed.setupConfig,
-              result: !parsed.result,
-              excelResult: !parsed.excelResult
-            });
-            localStorage.removeItem(savedKey);
-            console.log('🗑️ Incomplete autosave deleted.');
-            console.log('💡 To create a valid autosave:');
-            console.log('   1. Load CSV files');
-            console.log('   2. Answer setup questions');
-            console.log('   3. Go to Working Sheet');
-            console.log('   4. Make changes');
-            console.log('   5. Autosave will be created automatically');
-            return;
-          }
-          
-          const savedTime = new Date(parsed.timestamp);
-          const now = new Date();
-          const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
-          console.log('📅 Autosave age:', daysDiff.toFixed(2), 'days');
-          
-          if (daysDiff < 7) {
-            console.log('✅ Autosave is recent, showing prompt');
-            setAutosaveData({ ...parsed, storageKey: savedKey });
-            setShowAutosavePrompt(true);
-          } else {
-            console.log('⏰ Autosave too old (>7 days), removing');
-            localStorage.removeItem(savedKey);
-          }
-        } else {
-          console.log('⚠️ Key exists but no data found');
-        }
-      } else {
-        console.log('ℹ️ No autosave keys found (this is normal on first use)');
-      }
-    } catch (error) {
-      console.error('❌ Error loading autosave:', error);
-    }
-  }, []);
+  // Autosave disabled - data too large for localStorage (QuotaExceededError)
+  // Use Session Save/Load instead (💾 Save Session button in Working Sheet)
 
-  // Restore from autosave
-  const restoreAutosave = () => {
-    console.log('🔄 Restore autosave clicked');
-    console.log('📦 Autosave data:', autosaveData);
-    
-    if (!autosaveData) {
-      console.error('❌ No autosave data to restore');
-      toast.error('No autosave data found');
-      return;
-    }
-    
-    try {
-      // Validate required data
-      if (!autosaveData.setupConfig || !autosaveData.result || !autosaveData.excelResult) {
-        console.error('❌ Missing required data in autosave:', {
-          hasSetupConfig: !!autosaveData.setupConfig,
-          hasResult: !!autosaveData.result,
-          hasExcelResult: !!autosaveData.excelResult,
-          hasEquipmentRows: !!autosaveData.equipmentRows
-        });
-        toast.error('Autosave data is incomplete - missing core data');
-        
-        // Log what we have
-        console.log('Autosave data structure:', {
-          keys: Object.keys(autosaveData),
-          timestamp: autosaveData.timestamp,
-          storageKey: autosaveData.storageKey
-        });
-        return;
-      }
-      
-      console.log('✅ Validation passed, restoring state...');
-      console.log('setupConfig:', autosaveData.setupConfig);
-      console.log('result has', autosaveData.result?.combinedDeduped?.length || 0, 'rows');
-      console.log('excelResult has', autosaveData.excelResult?.processed?.length || 0, 'equipment');
-      console.log('equipmentRows has', autosaveData.equipmentRows?.length || 0, 'entries');
-      
-      setSetupConfig(autosaveData.setupConfig);
-      setResult(autosaveData.result);
-      setExcelResult(autosaveData.excelResult);
-      setEquipmentRows(new Map(autosaveData.equipmentRows));
-      setViewMode(autosaveData.viewMode || 'working');
-      setShowAutosavePrompt(false);
-      
-      console.log('✅ All setState calls completed');
-      
-      // Give React time to process state updates
-      setTimeout(() => {
-        toast.success('Session restored!');
-        console.log('✅ Restore complete - UI should update now');
-      }, 100);
-      
-    } catch (error) {
-      console.error('❌ Error during restore:', error);
-      toast.error('Failed to restore session: ' + error.message);
-    }
-  };
-
-  // Dismiss autosave
-  const dismissAutosave = () => {
-    if (autosaveData && autosaveData.storageKey) {
-      localStorage.removeItem(autosaveData.storageKey);
-    }
-    setShowAutosavePrompt(false);
-    setAutosaveData(null);
-  };
-
-  // Autosave complete state whenever it changes
-  useEffect(() => {
-    // Only autosave if we have complete data
-    if (!setupConfig || !result || !excelResult) {
-      console.log('⏭️ Skipping autosave - missing data:', {
-        hasSetupConfig: !!setupConfig,
-        hasResult: !!result,
-        hasExcelResult: !!excelResult
-      });
-      return;
-    }
-    
-    try {
-      const AUTOSAVE_KEY = `workingsheet_autosave_${setupConfig.clientName}`;
-      const dataToSave = {
-        timestamp: new Date().toISOString(),
-        setupConfig,
-        result,
-        excelResult,
-        equipmentRows: Array.from(equipmentRows.entries()),
-        viewMode
-      };
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
-      console.log('✅ Autosaved to', AUTOSAVE_KEY, {
-        equipmentCount: equipmentRows.size,
-        viewMode,
-        timestamp: dataToSave.timestamp
-      });
-    } catch (error) {
-      console.error('❌ Error autosaving:', error);
-    }
-  }, [equipmentRows, setupConfig, result, excelResult, viewMode]);
+  // AUTOSAVE DISABLED - Data too large for localStorage (causes QuotaExceededError)
+  // Use Session Save/Load instead (💾 Save Session button in Working Sheet)
+  // useEffect(() => {
+  //   if (!setupConfig || !result || !excelResult) return;
+  //   try {
+  //     const AUTOSAVE_KEY = `workingsheet_autosave_${setupConfig.clientName}`;
+  //     const dataToSave = {
+  //       timestamp: new Date().toISOString(),
+  //       setupConfig,
+  //       result,
+  //       excelResult,
+  //       equipmentRows: Array.from(equipmentRows.entries()),
+  //       viewMode
+  //     };
+  //     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+  //   } catch (error) {
+  //     console.error('❌ Error autosaving:', error);
+  //   }
+  // }, [equipmentRows, setupConfig, result, excelResult, viewMode]);
 
   useEffect(() => {
     if (files.length > 0) {
@@ -236,12 +79,6 @@ export default function App() {
 
   const handleProcess = async () => {
     setIsProcessing(true);
-    
-    // Dismiss autosave prompt if files are being loaded
-    if (showAutosavePrompt) {
-      console.log('📥 New files loaded - dismissing autosave prompt');
-      setShowAutosavePrompt(false);
-    }
     
     try {
       // Check if first file is a session file
@@ -433,61 +270,6 @@ export default function App() {
       <Toaster position="top-right" richColors />
       
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Autosave Restore Prompt - FIRST THING */}
-        {showAutosavePrompt && autosaveData && (
-          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-6 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-yellow-900 mb-2">
-                  🔄 Autosaved Work Found
-                </h3>
-                <p className="text-sm text-yellow-800 mb-4">
-                  Found autosaved work from {new Date(autosaveData.timestamp).toLocaleString()}. 
-                  Would you like to restore your previous session?
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={restoreAutosave}
-                    style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#16a34a',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
-                  >
-                    ✅ Restore Autosave
-                  </button>
-                  <button
-                    onClick={dismissAutosave}
-                    style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#dc2626',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-                  >
-                    ❌ Start Fresh
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
