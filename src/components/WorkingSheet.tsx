@@ -15,7 +15,6 @@ interface WorkingSheetProps {
 
 interface WorkingRow {
   id: string;
-  criticality?: string;
   status?: string;
   area?: string;
   componentClass?: string;
@@ -327,7 +326,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
       'Done?',
       'CRIT #',
       'Row #',
-      'Criticality',
       'Status',
       'Area',
       'Component Class',
@@ -378,7 +376,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
           `"${done}"`,
           `"${critNum}"`,
           rowIndex + 1,
-          `"${row.criticality || ''}"`,
           `"${row.status || ''}"`,
           `"${row.area || ''}"`,
           `"${row.componentClass || ''}"`,
@@ -495,12 +492,15 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
         {/* Equipment Description */}
         {currentRawData && (
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-3 gap-2 text-sm">
               <div>
                 <span className="font-semibold">Description:</span> {getCol(currentRawData, 'Asset description') || '-'}
               </div>
               <div>
                 <span className="font-semibold">Description 2:</span> {getCol(currentRawData, 'Asset description2') || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">CRIT #:</span> {getCol(currentRawData, 'CRIT #') || '-'}
               </div>
             </div>
             {getCol(currentRawData, '*Idem to') && (
@@ -526,7 +526,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
               <thead className="sticky top-12 bg-gray-100 z-10">
                 <tr>
                   <th className="p-2 text-left font-semibold border sticky left-0 bg-gray-100 z-20" style={{minWidth: '30px'}}>#</th>
-                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.criticality}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.status}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.area}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.componentClass}</th>
@@ -557,7 +556,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                 {currentRows.map((row, rowIndex) => (
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="p-2 border sticky left-0 bg-white z-10 text-gray-500 font-semibold">{rowIndex + 1}</td>
-                    <td className="p-2 border">{renderCell(rowIndex, 'criticality', '100px', 'dropdown', ['Critical', 'Complicated', 'Critical & Complicated'])}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'status', '120px', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'area', '100px')}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'componentClass', '120px')}</td>
