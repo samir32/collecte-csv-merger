@@ -106,31 +106,49 @@ export default function App() {
     }
     
     try {
-      console.log('Setting setupConfig:', autosaveData.setupConfig);
+      // Validate required data
+      if (!autosaveData.setupConfig || !autosaveData.result || !autosaveData.excelResult) {
+        console.error('❌ Missing required data in autosave:', {
+          hasSetupConfig: !!autosaveData.setupConfig,
+          hasResult: !!autosaveData.result,
+          hasExcelResult: !!autosaveData.excelResult,
+          hasEquipmentRows: !!autosaveData.equipmentRows
+        });
+        toast.error('Autosave data is incomplete - missing core data');
+        
+        // Log what we have
+        console.log('Autosave data structure:', {
+          keys: Object.keys(autosaveData),
+          timestamp: autosaveData.timestamp,
+          storageKey: autosaveData.storageKey
+        });
+        return;
+      }
+      
+      console.log('✅ Validation passed, restoring state...');
+      console.log('setupConfig:', autosaveData.setupConfig);
+      console.log('result has', autosaveData.result?.combinedDeduped?.length || 0, 'rows');
+      console.log('excelResult has', autosaveData.excelResult?.processed?.length || 0, 'equipment');
+      console.log('equipmentRows has', autosaveData.equipmentRows?.length || 0, 'entries');
+      
       setSetupConfig(autosaveData.setupConfig);
-      
-      console.log('Setting result:', autosaveData.result ? 'exists' : 'missing');
       setResult(autosaveData.result);
-      
-      console.log('Setting excelResult:', autosaveData.excelResult ? 'exists' : 'missing');
       setExcelResult(autosaveData.excelResult);
-      
-      console.log('Setting equipmentRows:', autosaveData.equipmentRows ? autosaveData.equipmentRows.length + ' equipment' : 'missing');
       setEquipmentRows(new Map(autosaveData.equipmentRows));
-      
-      console.log('Setting viewMode to:', autosaveData.viewMode || 'working');
       setViewMode(autosaveData.viewMode || 'working');
-      
-      console.log('Hiding autosave prompt');
       setShowAutosavePrompt(false);
       
-      console.log('✅ All state updated, showing toast');
-      toast.success('Session restored!');
+      console.log('✅ All setState calls completed');
       
-      console.log('✅ Restore complete');
+      // Give React time to process state updates
+      setTimeout(() => {
+        toast.success('Session restored!');
+        console.log('✅ Restore complete - UI should update now');
+      }, 100);
+      
     } catch (error) {
       console.error('❌ Error during restore:', error);
-      toast.error('Failed to restore session');
+      toast.error('Failed to restore session: ' + error.message);
     }
   };
 
