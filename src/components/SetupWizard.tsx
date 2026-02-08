@@ -62,9 +62,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-          <Settings className="text-white" size={32} />
-        </div>
         <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
       </div>
 
@@ -82,20 +79,20 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setLanguage('en')}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       language === 'en'
                         ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-blue-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setLanguage('fr')}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       language === 'fr'
                         ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-blue-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.no}
@@ -118,20 +115,20 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPreProgram(true)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       preProgram
                         ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-green-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setPreProgram(false)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       !preProgram
                         ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-green-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.no}
@@ -154,20 +151,20 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSpartakus(true)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       spartakus
                         ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-purple-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setSpartakus(false)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
                       !spartakus
                         ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
+                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-purple-500 hover:bg-gray-50'
                     }`}
                   >
                     {t.no}
