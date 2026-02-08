@@ -65,7 +65,24 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   }
 
   const currentEquipment = equipment[currentPage];
+  
+  // ENHANCED DEBUG: Log matching details
+  console.log('🔍 DATA MATCHING DEBUG:', {
+    currentEquipment_assetNumber: currentEquipment?.assetNumber,
+    rawData_length: rawData?.length,
+    first_3_rawData_assetNumbers: rawData?.slice(0, 3).map(r => r['Asset number']),
+    all_unique_assetNumbers: [...new Set(rawData?.map(r => r['Asset number']))]
+  });
+  
   const currentRawData = rawData?.find(row => row['Asset number'] === currentEquipment?.assetNumber) || null;
+  
+  // Log the result
+  console.log('✅ Match result:', {
+    found: !!currentRawData,
+    searching_for: currentEquipment?.assetNumber,
+    matched_row: currentRawData ? 'YES' : 'NO'
+  });
+  
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
 
   const labels = {
@@ -327,6 +344,57 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
             <h3 className="text-lg font-bold text-blue-900 mb-4 sticky top-0 bg-blue-50 pb-2">
               Reference Data (From iPad Collection)
             </h3>
+
+            {/* ENHANCED DEBUG INFO */}
+            <div className="bg-yellow-100 border-2 border-yellow-500 p-3 rounded-lg mb-4 text-xs">
+              <div className="font-bold mb-2 text-lg">🔍 DATA MATCHING DEBUG</div>
+              
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <div className="font-bold text-blue-800">Equipment Side:</div>
+                  <div>currentEquipment exists: <span className="font-bold">{String(!!currentEquipment)}</span></div>
+                  <div>Searching for Asset#: <span className="font-bold text-red-600">{currentEquipment?.assetNumber || 'NULL'}</span></div>
+                </div>
+                <div>
+                  <div className="font-bold text-green-800">Raw Data Side:</div>
+                  <div>rawData array length: <span className="font-bold">{rawData?.length || 0}</span></div>
+                  <div>Match found: <span className="font-bold">{String(!!currentRawData)}</span></div>
+                </div>
+              </div>
+
+              <div className="border-t-2 border-yellow-600 pt-2">
+                <div className="font-bold mb-1">First 5 Asset Numbers in rawData:</div>
+                <div className="bg-white p-2 rounded font-mono text-xs max-h-20 overflow-auto">
+                  {rawData?.slice(0, 5).map((row, idx) => (
+                    <div key={idx}>
+                      [{idx}] "{row['Asset number']}" {row['Asset number'] === currentEquipment?.assetNumber ? '← MATCH!' : ''}
+                    </div>
+                  )) || 'No data'}
+                </div>
+              </div>
+
+              {currentRawData && (
+                <div className="mt-3 border-t-2 border-green-600 pt-2">
+                  <div className="font-bold text-green-800 mb-1">✅ Match Found! Sample fields:</div>
+                  <div className="bg-white p-2 rounded">
+                    <div>Asset#: {String(currentRawData['Asset number'])}</div>
+                    <div>User: {String(currentRawData['User'] || 'N/A')}</div>
+                    <div>Motor: {String(currentRawData['Motor'] || 'N/A')}</div>
+                    <div>HP: {String(currentRawData['HP'] || 'N/A')}</div>
+                  </div>
+                </div>
+              )}
+
+              {!currentRawData && rawData && rawData.length > 0 && (
+                <div className="mt-3 border-t-2 border-red-600 pt-2">
+                  <div className="font-bold text-red-800">❌ NO MATCH FOUND</div>
+                  <div className="text-red-700">
+                    Looking for "{currentEquipment?.assetNumber}" but not found in rawData.
+                    Check if asset number format matches (spaces, dashes, leading zeros, etc.)
+                  </div>
+                </div>
+              )}
+            </div>
 
             {currentRawData && (
               <div className="space-y-3">
