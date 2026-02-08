@@ -98,6 +98,69 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
 
   const [currentPage, setCurrentPage] = useState(0);
   const [equipmentRows, setEquipmentRows] = useState<Map<number, WorkingRow[]>>(() => initializeEquipmentRows());
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [savedData, setSavedData] = useState<any>(null);
+
+  // Autosave key for localStorage
+  const AUTOSAVE_KEY = `workingsheet_autosave_${clientName}`;
+
+  // Check for autosaved data on mount
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Check if it's recent (within last 7 days)
+        const savedTime = new Date(parsed.timestamp);
+        const now = new Date();
+        const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (daysDiff < 7) {
+          setSavedData(parsed);
+          setShowRestorePrompt(true);
+        } else {
+          // Too old, clear it
+          localStorage.removeItem(AUTOSAVE_KEY);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading autosave:', error);
+    }
+  }, []);
+
+  // Autosave whenever equipmentRows changes
+  React.useEffect(() => {
+    // Don't autosave if we just loaded or if showing restore prompt
+    if (showRestorePrompt) return;
+    
+    try {
+      const dataToSave = {
+        timestamp: new Date().toISOString(),
+        equipmentRows: Array.from(equipmentRows.entries()),
+        currentPage
+      };
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.error('Error autosaving:', error);
+    }
+  }, [equipmentRows, currentPage, showRestorePrompt]);
+
+  // Restore from autosave
+  const restoreAutosave = () => {
+    if (savedData) {
+      const restoredMap = new Map(savedData.equipmentRows);
+      setEquipmentRows(restoredMap);
+      setCurrentPage(savedData.currentPage || 0);
+      setShowRestorePrompt(false);
+    }
+  };
+
+  // Dismiss autosave prompt
+  const dismissAutosave = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setShowRestorePrompt(false);
+    setSavedData(null);
+  };
 
   // Debug logging
   console.log('WorkingSheet render:', {
@@ -413,10 +476,69 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Clear autosave after successful export
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      console.log('Autosave cleared after export');
+    } catch (error) {
+      console.error('Error clearing autosave:', error);
+    }
   };
 
   return (
     <div className="space-y-4">
+      {/* Autosave Restore Prompt */}
+      {showRestorePrompt && savedData && (
+        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 shadow-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-yellow-900 mb-2">
+                Autosaved Data Found
+              </h3>
+              <p className="text-sm text-yellow-800 mb-3">
+                Found autosaved work from {new Date(savedData.timestamp).toLocaleString()}. 
+                Would you like to restore it?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={restoreAutosave}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#16a34a',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+                >
+                  Restore Autosave
+                </button>
+                <button
+                  onClick={dismissAutosave}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                >
+                  Start Fresh
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Pagination and Export */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
@@ -429,11 +551,32 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
               <ChevronLeft size={20} />
             </button>
             
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {currentEquipment?.assetNumber || 'No Asset #'}
-              </h2>
-              <p className="text-sm text-gray-600">
+            <div className="relative">
+              <select
+                value={currentPage}
+                onChange={(e) => setCurrentPage(Number(e.target.value))}
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  color: '#111827',
+                  border: '2px solid #3b82f6',
+                  borderRadius: '8px',
+                  padding: '4px 32px 4px 8px',
+                  backgroundColor: '#ffffff',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%233b82f6\' d=\'M6 9L1 4h10z\'/%3E%3C/svg%3E")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center'
+                }}
+              >
+                {equipment.map((equip, index) => (
+                  <option key={index} value={index}>
+                    {equip.assetNumber || `Equipment ${index + 1}`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-gray-600 mt-1">
                 Equipment {currentPage + 1} of {equipment.length}
               </p>
             </div>
@@ -505,7 +648,29 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
             </div>
             {getCol(currentRawData, '*Idem to') && (
               <div className="mt-2 p-2 bg-blue-100 border border-blue-300 rounded text-sm">
-                <span className="font-semibold text-blue-800">Linked to:</span> {getCol(currentRawData, '*Idem to')}
+                <span className="font-semibold text-blue-800">Linked to:</span>{' '}
+                <button
+                  onClick={() => {
+                    const linkedAsset = getCol(currentRawData, '*Idem to');
+                    const linkedIndex = equipment.findIndex(e => e.assetNumber === linkedAsset);
+                    if (linkedIndex !== -1) {
+                      setCurrentPage(linkedIndex);
+                    }
+                  }}
+                  style={{
+                    color: '#1d4ed8',
+                    fontWeight: 'bold',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    padding: 0
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.color = '#1e40af'}
+                  onMouseOut={(e) => e.currentTarget.style.color = '#1d4ed8'}
+                >
+                  {getCol(currentRawData, '*Idem to')}
+                </button>
                 <span className="text-blue-600 ml-2 text-xs">(Editable fields are synchronized with this equipment)</span>
               </div>
             )}
