@@ -77,19 +77,15 @@ export default function App() {
 
   // Restore from autosave
   const restoreAutosave = () => {
-    if (autosaveData && autosaveData.sessionData) {
-      const session = autosaveData.sessionData;
-      setSetupConfig({
-        language: session.language,
-        preProgram: false,
-        spartakus: false,
-        clientName: session.clientName
-      });
-      setResult(session.result);
-      setExcelResult(session.excelResult);
+    if (autosaveData) {
+      console.log('Restoring autosave:', autosaveData);
+      setSetupConfig(autosaveData.setupConfig);
+      setResult(autosaveData.result);
+      setExcelResult(autosaveData.excelResult);
       setEquipmentRows(new Map(autosaveData.equipmentRows));
-      setViewMode('working');
+      setViewMode(autosaveData.viewMode || 'working');
       setShowAutosavePrompt(false);
+      toast.success('Session restored!');
     }
   };
 
@@ -101,6 +97,28 @@ export default function App() {
     setShowAutosavePrompt(false);
     setAutosaveData(null);
   };
+
+  // Autosave complete state whenever it changes
+  useEffect(() => {
+    // Only autosave if we have complete data
+    if (!setupConfig || !result || !excelResult) return;
+    
+    try {
+      const AUTOSAVE_KEY = `workingsheet_autosave_${setupConfig.clientName}`;
+      const dataToSave = {
+        timestamp: new Date().toISOString(),
+        setupConfig,
+        result,
+        excelResult,
+        equipmentRows: Array.from(equipmentRows.entries()),
+        viewMode
+      };
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+      console.log('✅ Autosaved to', AUTOSAVE_KEY);
+    } catch (error) {
+      console.error('❌ Error autosaving:', error);
+    }
+  }, [equipmentRows, setupConfig, result, excelResult, viewMode]);
 
   useEffect(() => {
     if (files.length > 0) {
