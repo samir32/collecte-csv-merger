@@ -250,36 +250,36 @@ export default function App() {
                 <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm">
                   <button
                     onClick={() => setViewMode('csv')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[140px] ${
                       viewMode === 'csv'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <FileCheck size={20} />
-                    CSV View
+                    <span>CSV View</span>
                   </button>
                   <button
                     onClick={() => setViewMode('excel')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[200px] ${
                       viewMode === 'excel'
                         ? 'bg-green-600 text-white shadow-md'
                         : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Eye size={20} />
-                    Equipment Review
+                    <span>Equipment Review</span>
                   </button>
                   <button
                     onClick={() => setViewMode('working')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all ${
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[180px] ${
                       viewMode === 'working'
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Edit3 size={20} />
-                    Working Sheet
+                    <span>Working Sheet</span>
                   </button>
                 </div>
               </div>
@@ -497,7 +497,7 @@ export default function App() {
 
                       <WorkingSheet
                         equipment={excelResult.processed}
-                        rawData={result.combined}
+                        rawData={result.combinedDeduped}
                         schema={result.schema}
                         clientName={setupConfig.clientName}
                         language={setupConfig.language}
