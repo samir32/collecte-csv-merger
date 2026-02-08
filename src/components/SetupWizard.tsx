@@ -79,21 +79,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setLanguage('en')}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      language === 'en'
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-blue-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: language === 'en' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: language === 'en' ? '#2563eb' : '#ffffff',
+                      color: language === 'en' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setLanguage('fr')}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      language === 'fr'
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-blue-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: language === 'fr' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: language === 'fr' ? '#2563eb' : '#ffffff',
+                      color: language === 'fr' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
@@ -115,21 +125,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPreProgram(true)}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      preProgram
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-green-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: preProgram ? 'none' : '2px solid #1f2937',
+                      backgroundColor: preProgram ? '#16a34a' : '#ffffff',
+                      color: preProgram ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setPreProgram(false)}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      !preProgram
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-green-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: !preProgram ? 'none' : '2px solid #1f2937',
+                      backgroundColor: !preProgram ? '#16a34a' : '#ffffff',
+                      color: !preProgram ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
@@ -151,21 +171,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSpartakus(true)}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      spartakus
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-purple-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: spartakus ? 'none' : '2px solid #1f2937',
+                      backgroundColor: spartakus ? '#9333ea' : '#ffffff',
+                      color: spartakus ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setSpartakus(false)}
-                    className={`flex-1 px-8 py-4 rounded-lg font-bold transition-all ${
-                      !spartakus
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-900 border-2 border-gray-400 hover:border-purple-500 hover:bg-gray-50'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: !spartakus ? 'none' : '2px solid #1f2937',
+                      backgroundColor: !spartakus ? '#9333ea' : '#ffffff',
+                      color: !spartakus ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
