@@ -246,40 +246,43 @@ export default function App() {
               className="space-y-6"
             >
               {/* View Mode Toggle */}
-              <div className="flex justify-center">
-                <div className="inline-flex bg-gray-200 rounded-xl p-1 shadow-sm">
+              <div className="flex justify-center mb-6">
+                <div className="inline-flex bg-gray-200 rounded-xl p-1.5 shadow-lg gap-1">
                   <button
                     onClick={() => setViewMode('csv')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[140px] ${
+                    style={{minWidth: '140px'}}
+                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
                       viewMode === 'csv'
                         ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                     }`}
                   >
                     <FileCheck size={20} />
-                    <span>CSV View</span>
+                    <span className="whitespace-nowrap">CSV View</span>
                   </button>
                   <button
                     onClick={() => setViewMode('excel')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[200px] ${
+                    style={{minWidth: '200px'}}
+                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
                       viewMode === 'excel'
                         ? 'bg-green-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                     }`}
                   >
                     <Eye size={20} />
-                    <span>Equipment Review</span>
+                    <span className="whitespace-nowrap">Equipment Review</span>
                   </button>
                   <button
                     onClick={() => setViewMode('working')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition-all min-w-[180px] ${
+                    style={{minWidth: '190px'}}
+                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold transition-all ${
                       viewMode === 'working'
                         ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                     }`}
                   >
                     <Edit3 size={20} />
-                    <span>Working Sheet</span>
+                    <span className="whitespace-nowrap">Working Sheet</span>
                   </button>
                 </div>
               </div>
