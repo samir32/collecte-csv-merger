@@ -124,8 +124,6 @@ export function WorkingSheet({
     onEquipmentRowsChange(newRows);
   };
 
-  const [currentPage, setCurrentPage] = useState(0);
-
   // Debug logging
   console.log('WorkingSheet render:', {
     equipmentCount: equipment?.length || 0,
