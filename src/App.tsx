@@ -49,43 +49,88 @@ export default function App() {
 
   // Check for autosave on app load
   useEffect(() => {
+    console.log('🔍 Checking for autosave on app load...');
     try {
       // Check all possible autosave keys (we don't know client name yet)
       const keys = Object.keys(localStorage).filter(k => k.startsWith('workingsheet_autosave_'));
+      console.log('📋 Found autosave keys:', keys);
+      
       if (keys.length > 0) {
         // Get the most recent one
         const savedKey = keys[0]; // For now, use first one found
+        console.log('🔑 Using autosave key:', savedKey);
+        
         const saved = localStorage.getItem(savedKey);
         if (saved) {
+          console.log('📦 Found autosave data, parsing...');
           const parsed = JSON.parse(saved);
+          console.log('✅ Parsed autosave:', {
+            timestamp: parsed.timestamp,
+            hasSetupConfig: !!parsed.setupConfig,
+            hasResult: !!parsed.result,
+            hasExcelResult: !!parsed.excelResult,
+            hasEquipmentRows: !!parsed.equipmentRows
+          });
+          
           const savedTime = new Date(parsed.timestamp);
           const now = new Date();
           const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
+          console.log('📅 Autosave age:', daysDiff.toFixed(2), 'days');
           
           if (daysDiff < 7) {
+            console.log('✅ Autosave is recent, showing prompt');
             setAutosaveData({ ...parsed, storageKey: savedKey });
             setShowAutosavePrompt(true);
           } else {
+            console.log('⏰ Autosave too old, removing');
             localStorage.removeItem(savedKey);
           }
         }
+      } else {
+        console.log('ℹ️ No autosave found');
       }
     } catch (error) {
-      console.error('Error loading autosave:', error);
+      console.error('❌ Error loading autosave:', error);
     }
   }, []);
 
   // Restore from autosave
   const restoreAutosave = () => {
-    if (autosaveData) {
-      console.log('Restoring autosave:', autosaveData);
+    console.log('🔄 Restore autosave clicked');
+    console.log('📦 Autosave data:', autosaveData);
+    
+    if (!autosaveData) {
+      console.error('❌ No autosave data to restore');
+      toast.error('No autosave data found');
+      return;
+    }
+    
+    try {
+      console.log('Setting setupConfig:', autosaveData.setupConfig);
       setSetupConfig(autosaveData.setupConfig);
+      
+      console.log('Setting result:', autosaveData.result ? 'exists' : 'missing');
       setResult(autosaveData.result);
+      
+      console.log('Setting excelResult:', autosaveData.excelResult ? 'exists' : 'missing');
       setExcelResult(autosaveData.excelResult);
+      
+      console.log('Setting equipmentRows:', autosaveData.equipmentRows ? autosaveData.equipmentRows.length + ' equipment' : 'missing');
       setEquipmentRows(new Map(autosaveData.equipmentRows));
+      
+      console.log('Setting viewMode to:', autosaveData.viewMode || 'working');
       setViewMode(autosaveData.viewMode || 'working');
+      
+      console.log('Hiding autosave prompt');
       setShowAutosavePrompt(false);
+      
+      console.log('✅ All state updated, showing toast');
       toast.success('Session restored!');
+      
+      console.log('✅ Restore complete');
+    } catch (error) {
+      console.error('❌ Error during restore:', error);
+      toast.error('Failed to restore session');
     }
   };
 
@@ -101,7 +146,14 @@ export default function App() {
   // Autosave complete state whenever it changes
   useEffect(() => {
     // Only autosave if we have complete data
-    if (!setupConfig || !result || !excelResult) return;
+    if (!setupConfig || !result || !excelResult) {
+      console.log('⏭️ Skipping autosave - missing data:', {
+        hasSetupConfig: !!setupConfig,
+        hasResult: !!result,
+        hasExcelResult: !!excelResult
+      });
+      return;
+    }
     
     try {
       const AUTOSAVE_KEY = `workingsheet_autosave_${setupConfig.clientName}`;
@@ -114,7 +166,11 @@ export default function App() {
         viewMode
       };
       localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
-      console.log('✅ Autosaved to', AUTOSAVE_KEY);
+      console.log('✅ Autosaved to', AUTOSAVE_KEY, {
+        equipmentCount: equipmentRows.size,
+        viewMode,
+        timestamp: dataToSave.timestamp
+      });
     } catch (error) {
       console.error('❌ Error autosaving:', error);
     }
@@ -134,11 +190,15 @@ export default function App() {
     try {
       // Check if first file is a session file
       if (files.length === 1 && files[0].name.endsWith('.json')) {
+        console.log('📄 Detected JSON file:', files[0].name);
         const sessionFile = files[0];
         const sessionText = await sessionFile.text();
         try {
           const sessionData = JSON.parse(sessionText);
+          console.log('📋 Parsed JSON, type:', sessionData.type);
+          
           if (sessionData.type === 'workingsheet_session') {
+            console.log('✅ Valid session file, loading...');
             // Load session
             setSetupConfig({
               language: sessionData.language,
@@ -152,13 +212,23 @@ export default function App() {
             setViewMode('working');
             toast.success(`Session loaded: ${sessionData.clientName}`);
             setIsProcessing(false);
+            console.log('✅ Session loaded successfully');
+            return;
+          } else {
+            console.warn('⚠️ JSON file is not a session file (missing type field)');
+            toast.error('This is not a valid session file');
+            setIsProcessing(false);
             return;
           }
         } catch (e) {
-          // Not a valid session file, continue with CSV processing
+          console.error('❌ Failed to parse JSON:', e);
+          toast.error('Invalid JSON file format');
+          setIsProcessing(false);
+          return;
         }
       }
       
+      console.log('📊 Processing as CSV files...');
       // Process CSV files (preserveOrder=true by default to match VBA macro behavior)
       // The VBA macro does NOT sort data ('Call SORTIT' is commented out)
       const processed = await processCsvFiles(files, caseInsensitive);
