@@ -256,7 +256,7 @@ export default function App() {
                       : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-blue-400'
                     }
                   >
-                    📄 CSV View
+                    CSV View
                   </button>
                   <button
                     onClick={() => setViewMode('excel')}
@@ -265,7 +265,7 @@ export default function App() {
                       : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-green-400'
                     }
                   >
-                    👁️ Equipment Review
+                    Equipment Review
                   </button>
                   <button
                     onClick={() => setViewMode('working')}
@@ -274,7 +274,7 @@ export default function App() {
                       : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-purple-400'
                     }
                   >
-                    ✏️ Working Sheet
+                    Working Sheet
                   </button>
                 </div>
               </div>
