@@ -65,7 +65,7 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   }
 
   const currentEquipment = equipment[currentPage];
-  const currentRawData = rawData && rawData.length > currentPage ? rawData[currentPage] : null;
+  const currentRawData = rawData?.find(row => row['Asset number'] === currentEquipment?.assetNumber) || null;
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
 
   const labels = {
