@@ -251,28 +251,43 @@ export default function App() {
                 <div className="flex gap-2 bg-gray-100 p-2 rounded-lg">
                   <button
                     onClick={() => setViewMode('csv')}
-                    className={viewMode === 'csv' 
-                      ? 'px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg'
-                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-blue-400'
-                    }
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'csv' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'csv' ? '#2563eb' : '#ffffff',
+                      color: viewMode === 'csv' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     CSV View
                   </button>
                   <button
                     onClick={() => setViewMode('excel')}
-                    className={viewMode === 'excel'
-                      ? 'px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg'
-                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-green-400'
-                    }
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'excel' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'excel' ? '#16a34a' : '#ffffff',
+                      color: viewMode === 'excel' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     Equipment Review
                   </button>
                   <button
                     onClick={() => setViewMode('working')}
-                    className={viewMode === 'working'
-                      ? 'px-8 py-4 bg-purple-600 text-white font-bold rounded-lg shadow-lg'
-                      : 'px-8 py-4 bg-white text-gray-800 font-bold rounded-lg border-2 border-gray-300 hover:border-purple-400'
-                    }
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'working' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'working' ? '#9333ea' : '#ffffff',
+                      color: viewMode === 'working' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     Working Sheet
                   </button>
