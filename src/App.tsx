@@ -50,6 +50,8 @@ export default function App() {
   // Check for autosave on app load
   useEffect(() => {
     console.log('🔍 Checking for autosave on app load...');
+    console.log('📦 All localStorage keys:', Object.keys(localStorage));
+    
     try {
       // Check all possible autosave keys (we don't know client name yet)
       const keys = Object.keys(localStorage).filter(k => k.startsWith('workingsheet_autosave_'));
@@ -62,14 +64,22 @@ export default function App() {
         
         const saved = localStorage.getItem(savedKey);
         if (saved) {
-          console.log('📦 Found autosave data, parsing...');
+          console.log('📦 Found autosave data, size:', saved.length, 'characters');
+          console.log('📦 Parsing JSON...');
           const parsed = JSON.parse(saved);
-          console.log('✅ Parsed autosave:', {
+          console.log('✅ Parsed autosave successfully');
+          console.log('📊 Autosave contents:', {
             timestamp: parsed.timestamp,
             hasSetupConfig: !!parsed.setupConfig,
+            setupConfig: parsed.setupConfig,
             hasResult: !!parsed.result,
+            resultRowCount: parsed.result?.combinedDeduped?.length || 0,
             hasExcelResult: !!parsed.excelResult,
-            hasEquipmentRows: !!parsed.equipmentRows
+            excelEquipmentCount: parsed.excelResult?.processed?.length || 0,
+            hasEquipmentRows: !!parsed.equipmentRows,
+            equipmentRowsCount: parsed.equipmentRows?.length || 0,
+            viewMode: parsed.viewMode,
+            allKeys: Object.keys(parsed)
           });
           
           const savedTime = new Date(parsed.timestamp);
@@ -82,12 +92,14 @@ export default function App() {
             setAutosaveData({ ...parsed, storageKey: savedKey });
             setShowAutosavePrompt(true);
           } else {
-            console.log('⏰ Autosave too old, removing');
+            console.log('⏰ Autosave too old (>7 days), removing');
             localStorage.removeItem(savedKey);
           }
+        } else {
+          console.log('⚠️ Key exists but no data found');
         }
       } else {
-        console.log('ℹ️ No autosave found');
+        console.log('ℹ️ No autosave keys found (this is normal on first use)');
       }
     } catch (error) {
       console.error('❌ Error loading autosave:', error);
@@ -205,6 +217,13 @@ export default function App() {
 
   const handleProcess = async () => {
     setIsProcessing(true);
+    
+    // Dismiss autosave prompt if files are being loaded
+    if (showAutosavePrompt) {
+      console.log('📥 New files loaded - dismissing autosave prompt');
+      setShowAutosavePrompt(false);
+    }
+    
     try {
       // Check if first file is a session file
       if (files.length === 1 && files[0].name.endsWith('.json')) {
