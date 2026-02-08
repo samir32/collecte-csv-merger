@@ -450,17 +450,42 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={addRow}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
             >
-              <Plus size={18} />
+              <Plus size={20} />
               Add Row
             </button>
             <button
               onClick={exportData}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors shadow-md"
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#16a34a',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
             >
               Export Data
             </button>
