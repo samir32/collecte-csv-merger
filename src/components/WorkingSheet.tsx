@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProcessedEquipment } from '../utils/excel-processor';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { CsvRow, ColumnInfo } from '../utils/csv-logic';
@@ -105,7 +105,7 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   const AUTOSAVE_KEY = `workingsheet_autosave_${clientName}`;
 
   // Check for autosaved data on mount
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(AUTOSAVE_KEY);
       if (saved) {
@@ -129,7 +129,7 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   }, []);
 
   // Autosave whenever equipmentRows changes
-  React.useEffect(() => {
+  useEffect(() => {
     // Don't autosave if we just loaded or if showing restore prompt
     if (showRestorePrompt) return;
     
