@@ -43,6 +43,64 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('csv');
   const [excelTab, setExcelTab] = useState<ExcelTab>('all');
   const [setupConfig, setSetupConfig] = useState<SetupConfig | null>(null);
+  const [showAutosavePrompt, setShowAutosavePrompt] = useState(false);
+  const [autosaveData, setAutosaveData] = useState<any>(null);
+  const [equipmentRows, setEquipmentRows] = useState<Map<number, any[]>>(new Map());
+
+  // Check for autosave on app load
+  useEffect(() => {
+    try {
+      // Check all possible autosave keys (we don't know client name yet)
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('workingsheet_autosave_'));
+      if (keys.length > 0) {
+        // Get the most recent one
+        const savedKey = keys[0]; // For now, use first one found
+        const saved = localStorage.getItem(savedKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const savedTime = new Date(parsed.timestamp);
+          const now = new Date();
+          const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
+          
+          if (daysDiff < 7) {
+            setAutosaveData({ ...parsed, storageKey: savedKey });
+            setShowAutosavePrompt(true);
+          } else {
+            localStorage.removeItem(savedKey);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading autosave:', error);
+    }
+  }, []);
+
+  // Restore from autosave
+  const restoreAutosave = () => {
+    if (autosaveData && autosaveData.sessionData) {
+      const session = autosaveData.sessionData;
+      setSetupConfig({
+        language: session.language,
+        preProgram: false,
+        spartakus: false,
+        clientName: session.clientName
+      });
+      setResult(session.result);
+      setExcelResult(session.excelResult);
+      setEquipmentRows(new Map(autosaveData.equipmentRows));
+      setViewMode('working');
+      setShowAutosavePrompt(false);
+    }
+  };
+
+  // Dismiss autosave
+  const dismissAutosave = () => {
+    if (autosaveData && autosaveData.storageKey) {
+      localStorage.removeItem(autosaveData.storageKey);
+    }
+    setShowAutosavePrompt(false);
+    setAutosaveData(null);
+  };
 
   useEffect(() => {
     if (files.length > 0) {
@@ -56,6 +114,33 @@ export default function App() {
   const handleProcess = async () => {
     setIsProcessing(true);
     try {
+      // Check if first file is a session file
+      if (files.length === 1 && files[0].name.endsWith('.json')) {
+        const sessionFile = files[0];
+        const sessionText = await sessionFile.text();
+        try {
+          const sessionData = JSON.parse(sessionText);
+          if (sessionData.type === 'workingsheet_session') {
+            // Load session
+            setSetupConfig({
+              language: sessionData.language,
+              preProgram: false,
+              spartakus: false,
+              clientName: sessionData.clientName
+            });
+            setResult(sessionData.result);
+            setExcelResult(sessionData.excelResult);
+            setEquipmentRows(new Map(sessionData.equipmentRows));
+            setViewMode('working');
+            toast.success(`Session loaded: ${sessionData.clientName}`);
+            setIsProcessing(false);
+            return;
+          }
+        } catch (e) {
+          // Not a valid session file, continue with CSV processing
+        }
+      }
+      
       // Process CSV files (preserveOrder=true by default to match VBA macro behavior)
       // The VBA macro does NOT sort data ('Call SORTIT' is commented out)
       const processed = await processCsvFiles(files, caseInsensitive);
@@ -204,6 +289,61 @@ export default function App() {
       <Toaster position="top-right" richColors />
       
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Autosave Restore Prompt - FIRST THING */}
+        {showAutosavePrompt && autosaveData && (
+          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-6 shadow-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-yellow-900 mb-2">
+                  🔄 Autosaved Work Found
+                </h3>
+                <p className="text-sm text-yellow-800 mb-4">
+                  Found autosaved work from {new Date(autosaveData.timestamp).toLocaleString()}. 
+                  Would you like to restore your previous session?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={restoreAutosave}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#16a34a',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+                  >
+                    ✅ Restore Autosave
+                  </button>
+                  <button
+                    onClick={dismissAutosave}
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#dc2626',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                  >
+                    ❌ Start Fresh
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -511,6 +651,30 @@ export default function App() {
                         schema={result.schema}
                         clientName={setupConfig.clientName}
                         language={setupConfig.language}
+                        equipmentRows={equipmentRows}
+                        onEquipmentRowsChange={setEquipmentRows}
+                        onSaveSession={() => {
+                          // Save complete session as downloadable file
+                          const sessionData = {
+                            type: 'workingsheet_session',
+                            version: '1.0',
+                            timestamp: new Date().toISOString(),
+                            clientName: setupConfig.clientName,
+                            language: setupConfig.language,
+                            result: result,
+                            excelResult: excelResult,
+                            equipmentRows: Array.from(equipmentRows.entries())
+                          };
+                          const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `${setupConfig.clientName}_Session_${new Date().toISOString().split('T')[0]}.json`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          toast.success('Session saved!');
+                        }}
                         onUpdate={(updated) => {
                           setExcelResult({
                             ...excelResult,
