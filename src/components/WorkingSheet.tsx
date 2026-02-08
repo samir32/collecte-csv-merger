@@ -47,8 +47,25 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
     new Map(equipment.map((_, index) => [index, [{ id: `row-0` }]]))
   );
 
+  // Debug logging
+  console.log('WorkingSheet render:', {
+    equipmentCount: equipment?.length || 0,
+    rawDataCount: rawData?.length || 0,
+    schemaCount: schema?.length || 0,
+    currentPage
+  });
+
+  // Safety check - if no equipment, show message
+  if (!equipment || equipment.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <p className="text-gray-500 text-lg">No equipment data available. Please upload CSV files first.</p>
+      </div>
+    );
+  }
+
   const currentEquipment = equipment[currentPage];
-  const currentRawData = rawData[currentPage];
+  const currentRawData = rawData && rawData.length > currentPage ? rawData[currentPage] : null;
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
 
   const labels = {
