@@ -10,6 +10,9 @@ interface WorkingSheetProps {
   schema: ColumnInfo[];
   clientName: string;
   language: 'en' | 'fr';
+  equipmentRows: Map<number, WorkingRow[]>;
+  onEquipmentRowsChange: (rows: Map<number, WorkingRow[]>) => void;
+  onSaveSession: () => void;
   onUpdate: (updatedEquipment: ProcessedEquipment[]) => void;
 }
 
@@ -40,7 +43,17 @@ interface WorkingRow {
   comment?: string;
 }
 
-export function WorkingSheet({ equipment, rawData, schema, clientName, language, onUpdate }: WorkingSheetProps) {
+export function WorkingSheet({ 
+  equipment, 
+  rawData, 
+  schema, 
+  clientName, 
+  language, 
+  equipmentRows: parentEquipmentRows,
+  onEquipmentRowsChange,
+  onSaveSession,
+  onUpdate 
+}: WorkingSheetProps) {
   // Helper function to get column value using schema
   const getCol = (row: CsvRow, columnName: string, occurrence: number = 1): string => {
     if (!row || !schema) return '';
@@ -97,70 +110,45 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   };
 
   const [currentPage, setCurrentPage] = useState(0);
-  const [equipmentRows, setEquipmentRows] = useState<Map<number, WorkingRow[]>>(() => initializeEquipmentRows());
-  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
-  const [savedData, setSavedData] = useState<any>(null);
+  const [equipmentRows, setEquipmentRowsLocal] = useState<Map<number, WorkingRow[]>>(() => {
+    // Use parent state if provided and not empty, otherwise initialize
+    if (parentEquipmentRows && parentEquipmentRows.size > 0) {
+      return parentEquipmentRows;
+    }
+    return initializeEquipmentRows();
+  });
+  
+  // Wrapper to update both local and parent state
+  const setEquipmentRows = (newRows: Map<number, WorkingRow[]>) => {
+    setEquipmentRowsLocal(newRows);
+    onEquipmentRowsChange(newRows);
+  };
+
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Autosave key for localStorage
   const AUTOSAVE_KEY = `workingsheet_autosave_${clientName}`;
 
-  // Check for autosaved data on mount
+  // Autosave whenever equipmentRows changes - save complete session data
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(AUTOSAVE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Check if it's recent (within last 7 days)
-        const savedTime = new Date(parsed.timestamp);
-        const now = new Date();
-        const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
-        
-        if (daysDiff < 7) {
-          setSavedData(parsed);
-          setShowRestorePrompt(true);
-        } else {
-          // Too old, clear it
-          localStorage.removeItem(AUTOSAVE_KEY);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading autosave:', error);
-    }
-  }, []);
-
-  // Autosave whenever equipmentRows changes
-  useEffect(() => {
-    // Don't autosave if we just loaded or if showing restore prompt
-    if (showRestorePrompt) return;
-    
-    try {
-      const dataToSave = {
+      // Get the complete session data from parent
+      const sessionData = {
         timestamp: new Date().toISOString(),
         equipmentRows: Array.from(equipmentRows.entries()),
-        currentPage
+        currentPage,
+        sessionData: {
+          clientName,
+          language,
+          result: { combinedDeduped: rawData, schema },
+          excelResult: { processed: equipment }
+        }
       };
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(sessionData));
     } catch (error) {
       console.error('Error autosaving:', error);
     }
-  }, [equipmentRows, currentPage, showRestorePrompt]);
-
-  // Restore from autosave
-  const restoreAutosave = () => {
-    if (savedData) {
-      const restoredMap = new Map(savedData.equipmentRows);
-      setEquipmentRows(restoredMap);
-      setCurrentPage(savedData.currentPage || 0);
-      setShowRestorePrompt(false);
-    }
-  };
-
-  // Dismiss autosave prompt
-  const dismissAutosave = () => {
-    localStorage.removeItem(AUTOSAVE_KEY);
-    setShowRestorePrompt(false);
-    setSavedData(null);
-  };
+  }, [equipmentRows, currentPage]);
 
   // Debug logging
   console.log('WorkingSheet render:', {
@@ -489,56 +477,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   return (
     <div className="space-y-4">
       {/* Autosave Restore Prompt */}
-      {showRestorePrompt && savedData && (
-        <div className="bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 shadow-lg">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-yellow-900 mb-2">
-                Autosaved Data Found
-              </h3>
-              <p className="text-sm text-yellow-800 mb-3">
-                Found autosaved work from {new Date(savedData.timestamp).toLocaleString()}. 
-                Would you like to restore it?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={restoreAutosave}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#16a34a',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
-                >
-                  Restore Autosave
-                </button>
-                <button
-                  onClick={dismissAutosave}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#dc2626',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-                >
-                  Start Fresh
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header with Pagination and Export */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
@@ -628,6 +566,23 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
             >
               Export Data
+            </button>
+            <button
+              onClick={onSaveSession}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#9333ea',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#7e22ce'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
+            >
+              💾 Save Session
             </button>
           </div>
         </div>
