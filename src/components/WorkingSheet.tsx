@@ -48,9 +48,9 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   );
 
   // Helper function to get column value using schema
-  const getCol = (row: CsvRow, columnName: string): string => {
+  const getCol = (row: CsvRow, columnName: string, occurrence: number = 1): string => {
     if (!row || !schema) return '';
-    const col = schema.find(c => c.displayName === columnName);
+    const col = schema.find(c => c.displayName === columnName && c.occurrenceIndex === occurrence);
     return col ? (row[col.internalKey] || '') : '';
   };
 
@@ -354,57 +354,6 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
               Reference Data (From iPad Collection)
             </h3>
 
-            {/* ENHANCED DEBUG INFO */}
-            <div className="bg-yellow-100 border-2 border-yellow-500 p-3 rounded-lg mb-4 text-xs">
-              <div className="font-bold mb-2 text-lg">🔍 DATA MATCHING DEBUG</div>
-              
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <div className="font-bold text-blue-800">Equipment Side:</div>
-                  <div>currentEquipment exists: <span className="font-bold">{String(!!currentEquipment)}</span></div>
-                  <div>Searching for Asset#: <span className="font-bold text-red-600">{currentEquipment?.assetNumber || 'NULL'}</span></div>
-                </div>
-                <div>
-                  <div className="font-bold text-green-800">Raw Data Side:</div>
-                  <div>rawData array length: <span className="font-bold">{rawData?.length || 0}</span></div>
-                  <div>Match found: <span className="font-bold">{String(!!currentRawData)}</span></div>
-                </div>
-              </div>
-
-              <div className="border-t-2 border-yellow-600 pt-2">
-                <div className="font-bold mb-1">First 5 Asset Numbers in rawData:</div>
-                <div className="bg-white p-2 rounded font-mono text-xs max-h-20 overflow-auto">
-                  {rawData?.slice(0, 5).map((row, idx) => (
-                    <div key={idx}>
-                      [{idx}] "{getCol(row, 'Asset number')}" {getCol(row, 'Asset number') === currentEquipment?.assetNumber ? '← MATCH!' : ''}
-                    </div>
-                  )) || 'No data'}
-                </div>
-              </div>
-
-              {currentRawData && (
-                <div className="mt-3 border-t-2 border-green-600 pt-2">
-                  <div className="font-bold text-green-800 mb-1">✅ Match Found! Sample fields:</div>
-                  <div className="bg-white p-2 rounded">
-                    <div>Asset#: {getCol(currentRawData, 'Asset number')}</div>
-                    <div>User: {getCol(currentRawData, 'User') || 'N/A'}</div>
-                    <div>Motor: {getCol(currentRawData, 'Motor') || 'N/A'}</div>
-                    <div>HP: {getCol(currentRawData, 'HP') || 'N/A'}</div>
-                  </div>
-                </div>
-              )}
-
-              {!currentRawData && rawData && rawData.length > 0 && (
-                <div className="mt-3 border-t-2 border-red-600 pt-2">
-                  <div className="font-bold text-red-800">❌ NO MATCH FOUND</div>
-                  <div className="text-red-700">
-                    Looking for "{currentEquipment?.assetNumber}" but not found in rawData.
-                    Check if asset number format matches (spaces, dashes, leading zeros, etc.)
-                  </div>
-                </div>
-              )}
-            </div>
-
             {currentRawData && (
               <div className="space-y-3">
                 {/* Header Info */}
@@ -488,22 +437,51 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                   </div>
                 )}
 
-                {/* Component Section */}
-                <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
-                  <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
-                    Component
-                  </div>
-                  <div className="p-2 text-xs space-y-1">
-                    {getCol(currentRawData, 'Motor') && <div><span className="font-bold">Motor:</span> {getCol(currentRawData, 'Motor')}</div>}
-                    {getCol(currentRawData, 'Compressor') && <div><span className="font-bold">Compressor:</span> {getCol(currentRawData, 'Compressor')}</div>}
-                    {getCol(currentRawData, 'Gearbox') && <div><span className="font-bold">Gearbox:</span> {getCol(currentRawData, 'Gearbox')}</div>}
-                    {getCol(currentRawData, 'Pump') && <div><span className="font-bold">Pump:</span> {getCol(currentRawData, 'Pump')}</div>}
-                    {getCol(currentRawData, 'Bearing') && <div><span className="font-bold">Bearing:</span> {getCol(currentRawData, 'Bearing')}</div>}
-                    {getCol(currentRawData, 'Sub-Component descriptor') && (
-                      <div><span className="font-bold">Sub-Component descriptor:</span> {getCol(currentRawData, 'Sub-Component descriptor')}</div>
-                    )}
-                  </div>
-                </div>
+                {/* Component/Point Sections - Show ALL points with data (up to 12) */}
+                {(() => {
+                  const pointSections = [];
+                  
+                  // Check all 12 possible Component occurrences
+                  for (let i = 1; i <= 12; i++) {
+                    const component = getCol(currentRawData, 'Component', i);
+                    const subComp = getCol(currentRawData, 'Sub-Component', i);
+                    const subCompDesc = getCol(currentRawData, 'Sub-Component descriptor', i);
+                    const orientation = getCol(currentRawData, 'Orientation', i);
+                    
+                    // Only show if component has actual data (not empty or "---")
+                    if (component && component !== '---' && component.trim() !== '') {
+                      pointSections.push(
+                        <div key={`point-${i}`} className="bg-white border-2 border-blue-300 rounded-lg overflow-hidden">
+                          <div className="bg-blue-200 px-2 py-1 font-bold text-xs border-b-2 border-blue-300">
+                            Point {i}: {component}
+                          </div>
+                          <table className="w-full text-xs">
+                            <tbody>
+                              <tr className="border-b border-blue-100">
+                                <td className="font-bold px-2 py-1 bg-blue-50">Component</td>
+                                <td className="font-bold px-2 py-1 bg-blue-50">Sub-Component</td>
+                                <td className="font-bold px-2 py-1 bg-blue-50">Descriptor</td>
+                                <td className="font-bold px-2 py-1 bg-blue-50">Orientation</td>
+                              </tr>
+                              <tr>
+                                <td className="px-2 py-1">{component}</td>
+                                <td className="px-2 py-1">{subComp || '-'}</td>
+                                <td className="px-2 py-1">{subCompDesc || '-'}</td>
+                                <td className="px-2 py-1">{orientation || '-'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  return pointSections.length > 0 ? pointSections : (
+                    <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-2 text-xs text-gray-500">
+                      No component/point data collected
+                    </div>
+                  );
+                })()}
 
                 {/* Additional Component Details (Bearing, Coupling, etc.) */}
                 {(getCol(currentRawData, 'DE BRG / Coupling Type') || getCol(currentRawData, 'NDE BRG / Coupling Type') || getCol(currentRawData, 'NDE Bearing #') || getCol(currentRawData, 'Vol. (L)')) && (
