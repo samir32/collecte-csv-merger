@@ -150,11 +150,25 @@ export function EquipmentReview({ equipment, title }: EquipmentReviewProps) {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                  filter === f
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  border: filter === f ? 'none' : '2px solid #1f2937',
+                  backgroundColor: filter === f ? '#2563eb' : '#ffffff',
+                  color: filter === f ? '#ffffff' : '#1f2937',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) => {
+                  if (filter !== f) {
+                    e.currentTarget.style.backgroundColor = '#f3f4f6';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (filter !== f) {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                  }
+                }}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>

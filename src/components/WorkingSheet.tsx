@@ -585,7 +585,16 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                       {currentRows.length > 1 && (
                         <button
                           onClick={() => deleteRow(rowIndex)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          style={{
+                            padding: '4px',
+                            color: '#dc2626',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
                           <Trash2 size={14} />
                         </button>

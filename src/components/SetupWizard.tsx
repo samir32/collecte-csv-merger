@@ -225,7 +225,32 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           <button
             onClick={handleSubmit}
             disabled={!clientName.trim()}
-            className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-indigo-600"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '16px 32px',
+              backgroundColor: clientName.trim() ? '#2563eb' : '#ffffff',
+              color: clientName.trim() ? '#ffffff' : '#6b7280',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              borderRadius: '12px',
+              border: clientName.trim() ? 'none' : '2px solid #d1d5db',
+              cursor: clientName.trim() ? 'pointer' : 'not-allowed',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseOver={(e) => {
+              if (clientName.trim()) {
+                e.currentTarget.style.backgroundColor = '#1d4ed8';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (clientName.trim()) {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+              }
+            }}
           >
             <CheckCircle size={24} />
             {t.continue}
