@@ -654,8 +654,8 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                   </table>
                 </div>
 
-                {/* Motor Section (if Motor data exists) */}
-                {getCol(currentRawData, 'Motor') && (
+                {/* Motor Section (if Motor data exists and is not N/A) */}
+                {getCol(currentRawData, 'Motor') && getCol(currentRawData, 'Motor').toUpperCase() !== 'N/A' && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
                       Motor
@@ -706,8 +706,11 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                     const subCompDesc = getCol(currentRawData, 'Sub-Component descriptor', i);
                     const orientation = getCol(currentRawData, 'Orientation', i);
                     
-                    // Only show if component has actual data (not empty or "---")
-                    if (component && component !== '---' && component.trim() !== '') {
+                    // Only show if component has actual data (not empty, not "---", not "N/A")
+                    if (component && 
+                        component !== '---' && 
+                        component.trim() !== '' && 
+                        component.trim().toUpperCase() !== 'N/A') {
                       pointSections.push(
                         <div key={`point-${i}`} className="bg-white border-2 border-blue-300 rounded-lg overflow-hidden">
                           <div className="bg-blue-200 px-2 py-1 font-bold text-xs border-b-2 border-blue-300">
