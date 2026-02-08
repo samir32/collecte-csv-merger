@@ -47,6 +47,13 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
     new Map(equipment.map((_, index) => [index, [{ id: `row-0` }]]))
   );
 
+  // Helper function to get column value using schema
+  const getCol = (row: CsvRow, columnName: string): string => {
+    if (!row || !schema) return '';
+    const col = schema.find(c => c.displayName === columnName);
+    return col ? (row[col.internalKey] || '') : '';
+  };
+
   // Debug logging
   console.log('WorkingSheet render:', {
     equipmentCount: equipment?.length || 0,
@@ -70,17 +77,19 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
   console.log('🔍 DATA MATCHING DEBUG:', {
     currentEquipment_assetNumber: currentEquipment?.assetNumber,
     rawData_length: rawData?.length,
-    first_3_rawData_assetNumbers: rawData?.slice(0, 3).map(r => r['Asset number']),
-    all_unique_assetNumbers: [...new Set(rawData?.map(r => r['Asset number']))]
+    first_3_rawData_assetNumbers: rawData?.slice(0, 3).map(r => getCol(r, 'Asset number')),
+    all_unique_assetNumbers: [...new Set(rawData?.map(r => getCol(r, 'Asset number')))]
   });
   
-  const currentRawData = rawData?.find(row => row['Asset number'] === currentEquipment?.assetNumber) || null;
+  // Use getCol to access Asset number with proper internal key
+  const currentRawData = rawData?.find(row => getCol(row, 'Asset number') === currentEquipment?.assetNumber) || null;
   
   // Log the result
   console.log('✅ Match result:', {
     found: !!currentRawData,
     searching_for: currentEquipment?.assetNumber,
-    matched_row: currentRawData ? 'YES' : 'NO'
+    matched_row: currentRawData ? 'YES' : 'NO',
+    matched_asset: currentRawData ? getCol(currentRawData, 'Asset number') : 'N/A'
   });
   
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
@@ -367,7 +376,7 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                 <div className="bg-white p-2 rounded font-mono text-xs max-h-20 overflow-auto">
                   {rawData?.slice(0, 5).map((row, idx) => (
                     <div key={idx}>
-                      [{idx}] "{row['Asset number']}" {row['Asset number'] === currentEquipment?.assetNumber ? '← MATCH!' : ''}
+                      [{idx}] "{getCol(row, 'Asset number')}" {getCol(row, 'Asset number') === currentEquipment?.assetNumber ? '← MATCH!' : ''}
                     </div>
                   )) || 'No data'}
                 </div>
@@ -377,10 +386,10 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                 <div className="mt-3 border-t-2 border-green-600 pt-2">
                   <div className="font-bold text-green-800 mb-1">✅ Match Found! Sample fields:</div>
                   <div className="bg-white p-2 rounded">
-                    <div>Asset#: {String(currentRawData['Asset number'])}</div>
-                    <div>User: {String(currentRawData['User'] || 'N/A')}</div>
-                    <div>Motor: {String(currentRawData['Motor'] || 'N/A')}</div>
-                    <div>HP: {String(currentRawData['HP'] || 'N/A')}</div>
+                    <div>Asset#: {getCol(currentRawData, 'Asset number')}</div>
+                    <div>User: {getCol(currentRawData, 'User') || 'N/A'}</div>
+                    <div>Motor: {getCol(currentRawData, 'Motor') || 'N/A'}</div>
+                    <div>HP: {getCol(currentRawData, 'HP') || 'N/A'}</div>
                   </div>
                 </div>
               )}
@@ -411,12 +420,12 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                         <td className="font-bold py-1">CRIT #</td>
                       </tr>
                       <tr>
-                        <td className="py-1">{currentRawData['Asset number'] || '-'}</td>
-                        <td className="py-1">{currentRawData['UniqueRowID'] || '""'}</td>
-                        <td className="py-1">{currentRawData['User'] || '-'}</td>
-                        <td className="py-1">{currentRawData['Date/Time'] || '-'}</td>
-                        <td className="py-1">{currentRawData['Done?'] || '-'}</td>
-                        <td className="py-1">{currentRawData['CRIT #'] || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'Asset number') || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'UniqueRowID') || '""'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'User') || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'Date/Time') || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'Done?') || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'CRIT #') || '-'}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -431,15 +440,15 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                         <td className="font-bold py-1">Asset description2</td>
                       </tr>
                       <tr>
-                        <td className="py-1">{currentRawData['Asset description'] || '-'}</td>
-                        <td className="py-1">{currentRawData['Asset description2'] || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'Asset description') || '-'}</td>
+                        <td className="py-1">{getCol(currentRawData, 'Asset description2') || '-'}</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
                 {/* Motor Section (if Motor data exists) */}
-                {currentRawData['Motor'] && (
+                {getCol(currentRawData, 'Motor') && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
                       Motor
@@ -454,13 +463,13 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                           <td className="font-bold px-2 py-1 bg-gray-50">NDE BRG Alternate</td>
                         </tr>
                         <tr>
-                          <td className="px-2 py-1">{currentRawData['HP'] || '-'}</td>
-                          <td className="px-2 py-1">{currentRawData['RPM'] || '-'}</td>
-                          <td className="px-2 py-1">{currentRawData['Current'] || '-'}</td>
-                          <td className="px-2 py-1">{currentRawData['DE Bearing #'] || '-'}</td>
-                          <td className="px-2 py-1">{currentRawData['DE BRG Alternate'] || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'HP') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'RPM') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'Current') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'DE Bearing #') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'DE BRG Alternate') || '-'}</td>
                         </tr>
-                        {(currentRawData['Frame'] || currentRawData['Orientation']) && (
+                        {(getCol(currentRawData, 'Frame') || getCol(currentRawData, 'Orientation')) && (
                           <>
                             <tr className="border-t border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">Frame</td>
@@ -468,8 +477,8 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                               <td colSpan={3}></td>
                             </tr>
                             <tr>
-                              <td className="px-2 py-1">{currentRawData['Frame'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['Orientation'] || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Frame') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Orientation') || '-'}</td>
                               <td colSpan={3}></td>
                             </tr>
                           </>
@@ -485,46 +494,46 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                     Component
                   </div>
                   <div className="p-2 text-xs space-y-1">
-                    {currentRawData['Motor'] && <div><span className="font-bold">Motor:</span> {currentRawData['Motor']}</div>}
-                    {currentRawData['Compressor'] && <div><span className="font-bold">Compressor:</span> {currentRawData['Compressor']}</div>}
-                    {currentRawData['Gearbox'] && <div><span className="font-bold">Gearbox:</span> {currentRawData['Gearbox']}</div>}
-                    {currentRawData['Pump'] && <div><span className="font-bold">Pump:</span> {currentRawData['Pump']}</div>}
-                    {currentRawData['Bearing'] && <div><span className="font-bold">Bearing:</span> {currentRawData['Bearing']}</div>}
-                    {currentRawData['Sub-Component descriptor'] && (
-                      <div><span className="font-bold">Sub-Component descriptor:</span> {currentRawData['Sub-Component descriptor']}</div>
+                    {getCol(currentRawData, 'Motor') && <div><span className="font-bold">Motor:</span> {getCol(currentRawData, 'Motor')}</div>}
+                    {getCol(currentRawData, 'Compressor') && <div><span className="font-bold">Compressor:</span> {getCol(currentRawData, 'Compressor')}</div>}
+                    {getCol(currentRawData, 'Gearbox') && <div><span className="font-bold">Gearbox:</span> {getCol(currentRawData, 'Gearbox')}</div>}
+                    {getCol(currentRawData, 'Pump') && <div><span className="font-bold">Pump:</span> {getCol(currentRawData, 'Pump')}</div>}
+                    {getCol(currentRawData, 'Bearing') && <div><span className="font-bold">Bearing:</span> {getCol(currentRawData, 'Bearing')}</div>}
+                    {getCol(currentRawData, 'Sub-Component descriptor') && (
+                      <div><span className="font-bold">Sub-Component descriptor:</span> {getCol(currentRawData, 'Sub-Component descriptor')}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Additional Component Details (Bearing, Coupling, etc.) */}
-                {(currentRawData['DE BRG / Coupling Type'] || currentRawData['NDE BRG / Coupling Type'] || currentRawData['NDE Bearing #'] || currentRawData['Vol. (L)']) && (
+                {(getCol(currentRawData, 'DE BRG / Coupling Type') || getCol(currentRawData, 'NDE BRG / Coupling Type') || getCol(currentRawData, 'NDE Bearing #') || getCol(currentRawData, 'Vol. (L)')) && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
                       Bearing / Coupling
                     </div>
                     <table className="w-full text-xs">
                       <tbody>
-                        {(currentRawData['DE BRG / Coupling Type'] || currentRawData['NDE BRG / Coupling Type']) && (
+                        {(getCol(currentRawData, 'DE BRG / Coupling Type') || getCol(currentRawData, 'NDE BRG / Coupling Type')) && (
                           <>
                             <tr className="border-b border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">DE BRG / Coupling Type</td>
                               <td className="font-bold px-2 py-1 bg-gray-50">NDE BRG / Coupling Type</td>
                             </tr>
                             <tr>
-                              <td className="px-2 py-1">{currentRawData['DE BRG / Coupling Type'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['NDE BRG / Coupling Type'] || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'DE BRG / Coupling Type') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'NDE BRG / Coupling Type') || '-'}</td>
                             </tr>
                           </>
                         )}
-                        {currentRawData['NDE Bearing #'] && (
+                        {getCol(currentRawData, 'NDE Bearing #') && (
                           <>
                             <tr className="border-t border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">NDE Bearing #</td>
                               <td className="font-bold px-2 py-1 bg-gray-50">Vol. (L)</td>
                             </tr>
                             <tr>
-                              <td className="px-2 py-1">{currentRawData['NDE Bearing #'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['Vol. (L)'] || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'NDE Bearing #') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Vol. (L)') || '-'}</td>
                             </tr>
                           </>
                         )}
@@ -534,14 +543,14 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                 )}
 
                 {/* Sub-Component Details */}
-                {(currentRawData['Sub-Comp RPM'] || currentRawData['Notes'] || currentRawData['Idem Sh. d'] || currentRawData['Sev drn']) && (
+                {(getCol(currentRawData, 'Sub-Comp RPM') || getCol(currentRawData, 'Notes') || getCol(currentRawData, 'Idem Sh. d') || getCol(currentRawData, 'Sev drn')) && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
                       Sub-Component Details
                     </div>
                     <table className="w-full text-xs">
                       <tbody>
-                        {(currentRawData['Sub-Comp RPM'] || currentRawData['Notes'] || currentRawData['Idem Sh. d']) && (
+                        {(getCol(currentRawData, 'Sub-Comp RPM') || getCol(currentRawData, 'Notes') || getCol(currentRawData, 'Idem Sh. d')) && (
                           <>
                             <tr className="border-b border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">Sub-Comp RPM</td>
@@ -549,13 +558,13 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                               <td className="font-bold px-2 py-1 bg-gray-50">Idem Sh. d</td>
                             </tr>
                             <tr>
-                              <td className="px-2 py-1">{currentRawData['Sub-Comp RPM'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['Notes'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['Idem Sh. d'] || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Sub-Comp RPM') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Notes') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'Idem Sh. d') || '-'}</td>
                             </tr>
                           </>
                         )}
-                        {currentRawData['D'] && (
+                        {getCol(currentRawData, 'D') && (
                           <>
                             <tr className="border-t border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">D</td>
@@ -563,17 +572,17 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                               <td className="font-bold px-2 py-1 bg-gray-50">H</td>
                             </tr>
                             <tr>
-                              <td className="px-2 py-1">{currentRawData['D'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['B'] || '-'}</td>
-                              <td className="px-2 py-1">{currentRawData['H'] || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'D') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'B') || '-'}</td>
+                              <td className="px-2 py-1">{getCol(currentRawData, 'H') || '-'}</td>
                             </tr>
                           </>
                         )}
-                        {currentRawData['Sev drn'] && (
+                        {getCol(currentRawData, 'Sev drn') && (
                           <>
                             <tr className="border-t border-gray-200">
                               <td colSpan={3} className="px-2 py-1">
-                                <span className="font-bold">Sev drn:</span> {currentRawData['Sev drn']}
+                                <span className="font-bold">Sev drn:</span> {getCol(currentRawData, 'Sev drn')}
                               </td>
                             </tr>
                           </>
@@ -584,30 +593,30 @@ export function WorkingSheet({ equipment, rawData, schema, clientName, language,
                 )}
 
                 {/* Current Level Indicator */}
-                {currentRawData['Current Level Indicator'] && (
+                {getCol(currentRawData, 'Current Level Indicator') && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
                     <div className="bg-gray-200 px-2 py-1 font-bold text-xs border-b-2 border-gray-300">
                       Current Level
                     </div>
                     <div className="p-2 text-xs">
-                      <span className="font-bold">Indicator:</span> {currentRawData['Current Level Indicator']}
+                      <span className="font-bold">Indicator:</span> {getCol(currentRawData, 'Current Level Indicator')}
                     </div>
                   </div>
                 )}
 
                 {/* Idem to (Identical to) */}
-                {currentRawData['*Idem to'] && (
+                {getCol(currentRawData, '*Idem to') && (
                   <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-2">
                     <div className="font-bold text-xs mb-1">*Idem to (Identical to)</div>
-                    <div className="text-xs">{currentRawData['*Idem to']}</div>
+                    <div className="text-xs">{getCol(currentRawData, '*Idem to')}</div>
                   </div>
                 )}
 
                 {/* Additional Notes */}
-                {currentRawData['*Additional Notes'] && (
+                {getCol(currentRawData, '*Additional Notes') && (
                   <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-2">
                     <div className="font-bold text-xs mb-1">Additional Notes</div>
-                    <div className="text-xs">{currentRawData['*Additional Notes']}</div>
+                    <div className="text-xs">{getCol(currentRawData, '*Additional Notes')}</div>
                   </div>
                 )}
 
