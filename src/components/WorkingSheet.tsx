@@ -759,7 +759,9 @@ export function WorkingSheet({
                           <td className="font-bold px-2 py-1 bg-gray-50">HP</td>
                           <td className="font-bold px-2 py-1 bg-gray-50">RPM</td>
                           <td className="font-bold px-2 py-1 bg-gray-50">Current</td>
-                          <td className="font-bold px-2 py-1 bg-gray-50">DE BRG</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">DE Bearing #</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">DE BRG Alternate</td>
+                          <td className="font-bold px-2 py-1 bg-gray-50">NDE Bearing #</td>
                           <td className="font-bold px-2 py-1 bg-gray-50">NDE BRG Alternate</td>
                         </tr>
                         <tr>
@@ -768,18 +770,20 @@ export function WorkingSheet({
                           <td className="px-2 py-1">{getCol(currentRawData, 'Current') || '-'}</td>
                           <td className="px-2 py-1">{getCol(currentRawData, 'DE Bearing #') || '-'}</td>
                           <td className="px-2 py-1">{getCol(currentRawData, 'DE BRG Alternate') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'NDE Bearing #') || '-'}</td>
+                          <td className="px-2 py-1">{getCol(currentRawData, 'NDE BRG Alternate') || '-'}</td>
                         </tr>
                         {(getCol(currentRawData, 'Frame') || getCol(currentRawData, 'Orientation')) && (
                           <>
                             <tr className="border-t border-gray-200">
                               <td className="font-bold px-2 py-1 bg-gray-50">Frame</td>
                               <td className="font-bold px-2 py-1 bg-gray-50">Orientation</td>
-                              <td colSpan={3}></td>
+                              <td colSpan={5}></td>
                             </tr>
                             <tr>
                               <td className="px-2 py-1">{getCol(currentRawData, 'Frame') || '-'}</td>
                               <td className="px-2 py-1">{getCol(currentRawData, 'Orientation') || '-'}</td>
-                              <td colSpan={3}></td>
+                              <td colSpan={5}></td>
                             </tr>
                           </>
                         )}
