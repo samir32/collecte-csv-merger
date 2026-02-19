@@ -18,8 +18,6 @@ interface WorkingSheetProps {
 
 interface WorkingRow {
   id: string;
-  status?: string;
-  area?: string;
   componentClass?: string;
   subComponent?: string;
   subComponentDescription?: string;
@@ -163,6 +161,9 @@ export function WorkingSheet({
   });
   
   const currentRows = equipmentRows.get(currentPage) || [{ id: `row-0` }];
+
+  const hasStatusCol = schema ? schema.some(c => c.displayName === 'Status') : false;
+  const hasSecteurCol = schema ? schema.some(c => c.displayName === 'Secteur') : false;
 
   const labels = {
     fr: {
@@ -352,7 +353,7 @@ export function WorkingSheet({
       'CRIT #',
       'Row #',
       'Status',
-      'Area',
+      'Secteur',
       'Component Class',
       'Sub-Component',
       'Sub-Component Description',
@@ -401,8 +402,8 @@ export function WorkingSheet({
           `"${done}"`,
           `"${critNum}"`,
           rowIndex + 1,
-          `"${row.status || ''}"`,
-          `"${row.area || ''}"`,
+          `"${equipRawData ? getCol(equipRawData, 'Status') : ''}"`,
+          `"${equipRawData ? getCol(equipRawData, 'Secteur') : ''}"`,
           `"${row.componentClass || ''}"`,
           `"${row.subComponent || ''}"`,
           `"${row.subComponentDescription || ''}"`,
@@ -565,7 +566,7 @@ export function WorkingSheet({
         {/* Equipment Description */}
         {currentRawData && (
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-            <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
               <div>
                 <span className="font-semibold">Description:</span> {getCol(currentRawData, 'Asset description') || '-'}
               </div>
@@ -575,6 +576,25 @@ export function WorkingSheet({
               <div>
                 <span className="font-semibold">CRIT #:</span> {getCol(currentRawData, 'CRIT #') || '-'}
               </div>
+              <div>
+                <span className="font-semibold">User:</span> {getCol(currentRawData, 'User') || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Date/Time:</span> {getCol(currentRawData, 'Date/Time') || '-'}
+              </div>
+              <div>
+                <span className="font-semibold">Done?:</span> {getCol(currentRawData, 'Done?') || '-'}
+              </div>
+              {hasStatusCol && (
+                <div>
+                  <span className="font-semibold">Status:</span> {getCol(currentRawData, 'Status') || '-'}
+                </div>
+              )}
+              {hasSecteurCol && (
+                <div>
+                  <span className="font-semibold">Secteur:</span> {getCol(currentRawData, 'Secteur') || '-'}
+                </div>
+              )}
             </div>
             {getCol(currentRawData, '*Idem to') && (
               <div className="mt-2 p-2 bg-blue-100 border border-blue-300 rounded text-sm">
@@ -621,8 +641,6 @@ export function WorkingSheet({
               <thead className="sticky top-12 bg-gray-100 z-10">
                 <tr>
                   <th className="p-2 text-left font-semibold border sticky left-0 bg-gray-100 z-20" style={{minWidth: '30px'}}>#</th>
-                  <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.status}</th>
-                  <th className="p-2 text-left font-semibold border" style={{minWidth: '100px'}}>{t.area}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.componentClass}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '120px'}}>{t.subComponent}</th>
                   <th className="p-2 text-left font-semibold border" style={{minWidth: '150px'}}>{t.subComponentDesc}</th>
@@ -651,8 +669,6 @@ export function WorkingSheet({
                 {currentRows.map((row, rowIndex) => (
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="p-2 border sticky left-0 bg-white z-10 text-gray-500 font-semibold">{rowIndex + 1}</td>
-                    <td className="p-2 border">{renderCell(rowIndex, 'status', '120px', 'dropdown', language === 'fr' ? menuData.status.fr : menuData.status.en)}</td>
-                    <td className="p-2 border">{renderCell(rowIndex, 'area', '100px')}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'componentClass', '120px')}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'subComponent', '120px')}</td>
                     <td className="p-2 border">{renderCell(rowIndex, 'subComponentDescription', '150px')}</td>
@@ -700,53 +716,13 @@ export function WorkingSheet({
           </div>
 
           {/* RIGHT SIDE - Organized Reference Data like Excel */}
-          <div className="p-4 bg-blue-50 overflow-auto max-h-[600px]">
+          <div className="p-4 bg-blue-50 overflow-auto max-h-[600px] text-gray-900">
             <h3 className="text-lg font-bold text-blue-900 mb-4 sticky top-0 bg-blue-50 pb-2">
               Reference Data (From iPad Collection)
             </h3>
 
             {currentRawData && (
               <div className="space-y-3">
-                {/* Header Info */}
-                <div className="bg-gray-800 text-white p-2 rounded-lg">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      <tr>
-                        <td className="font-bold py-1">Asset Number</td>
-                        <td className="font-bold py-1">UniqueRowID</td>
-                        <td className="font-bold py-1">User</td>
-                        <td className="font-bold py-1">Date/Time</td>
-                        <td className="font-bold py-1">Done?</td>
-                        <td className="font-bold py-1">CRIT #</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1">{getCol(currentRawData, 'Asset number') || '-'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'UniqueRowID') || '""'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'User') || '-'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'Date/Time') || '-'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'Done?') || '-'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'CRIT #') || '-'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Asset Description Row */}
-                <div className="bg-gray-800 text-white p-2 rounded-lg">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      <tr>
-                        <td className="font-bold py-1">Asset description</td>
-                        <td className="font-bold py-1">Asset description2</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1">{getCol(currentRawData, 'Asset description') || '-'}</td>
-                        <td className="py-1">{getCol(currentRawData, 'Asset description2') || '-'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
                 {/* Motor Section (if Motor data exists and is not N/A) */}
                 {getCol(currentRawData, 'Motor') && getCol(currentRawData, 'Motor').toUpperCase() !== 'N/A' && (
                   <div className="bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
