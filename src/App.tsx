@@ -1,56 +1,164 @@
 import React, { useState, useEffect } from 'react';
 import { CsvUploader } from './components/CsvUploader';
 import { CsvPreviewTable } from './components/CsvPreviewTable';
+import { EquipmentReview } from './components/EquipmentReview';
+import { SetupWizard, SetupConfig } from './components/SetupWizard';
+import { WorkingSheet } from './components/WorkingSheet';
 import { processCsvFiles, exportToCsv, ProcessedResult } from './utils/csv-logic';
 import { 
+  processWithExcelLogic, 
+  assignPageNumbers,
+  ExcelProcessingResult 
+} from './utils/excel-processor';
+import { 
+  exportToFormattedExcel, 
+  exportCurrentViewToExcel 
+} from './utils/excel-exporter';
+import { 
   Download, 
-  Settings, 
   FileCheck, 
-  ClipboardList, 
   CheckCircle2, 
   AlertCircle,
   Loader2,
-  Trash2
+  FileSpreadsheet,
+  Eye,
+  LayoutList,
+  ClipboardList,
+  Edit3
 } from 'lucide-react';
 import { toast, Toaster } from 'sonner@2.0.3';
 import { motion, AnimatePresence } from 'motion/react';
 
 type TabType = 'combined' | 'done' | 'todo';
+type ViewMode = 'csv' | 'excel' | 'working';
+type ExcelTab = 'all' | 'procedures' | 'notCollected' | 'noLubePoint' | 'sampled' | 'questions';
 
 export default function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [caseInsensitive, setCaseInsensitive] = useState(false);
   const [result, setResult] = useState<ProcessedResult | null>(null);
+  const [excelResult, setExcelResult] = useState<ExcelProcessingResult | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('combined');
+  const [viewMode, setViewMode] = useState<ViewMode>('csv');
+  const [excelTab, setExcelTab] = useState<ExcelTab>('all');
+  const [setupConfig, setSetupConfig] = useState<SetupConfig | null>(null);
+  const [equipmentRows, setEquipmentRows] = useState<Map<number, any[]>>(new Map());
+
+  // Autosave disabled - data too large for localStorage (QuotaExceededError)
+  // Use Session Save/Load instead (💾 Save Session button in Working Sheet)
+
+  // AUTOSAVE DISABLED - Data too large for localStorage (causes QuotaExceededError)
+  // Use Session Save/Load instead (💾 Save Session button in Working Sheet)
+  // useEffect(() => {
+  //   if (!setupConfig || !result || !excelResult) return;
+  //   try {
+  //     const AUTOSAVE_KEY = `workingsheet_autosave_${setupConfig.clientName}`;
+  //     const dataToSave = {
+  //       timestamp: new Date().toISOString(),
+  //       setupConfig,
+  //       result,
+  //       excelResult,
+  //       equipmentRows: Array.from(equipmentRows.entries()),
+  //       viewMode
+  //     };
+  //     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+  //   } catch (error) {
+  //     console.error('❌ Error autosaving:', error);
+  //   }
+  // }, [equipmentRows, setupConfig, result, excelResult, viewMode]);
 
   useEffect(() => {
     if (files.length > 0) {
       handleProcess();
     } else {
       setResult(null);
+      setExcelResult(null);
     }
   }, [files, caseInsensitive]);
 
   const handleProcess = async () => {
     setIsProcessing(true);
+    
     try {
+      // Check if first file is a session file
+      if (files.length === 1 && files[0].name.endsWith('.json')) {
+        console.log('📄 Detected JSON file:', files[0].name);
+        const sessionFile = files[0];
+        const sessionText = await sessionFile.text();
+        try {
+          const sessionData = JSON.parse(sessionText);
+          console.log('📋 Parsed JSON, type:', sessionData.type);
+          
+          if (sessionData.type === 'workingsheet_session') {
+            console.log('✅ Valid session file, loading...');
+            // Load session
+            setSetupConfig({
+              language: sessionData.language,
+              preProgram: false,
+              spartakus: false,
+              clientName: sessionData.clientName
+            });
+            setResult(sessionData.result);
+            setExcelResult(sessionData.excelResult);
+            setEquipmentRows(new Map(sessionData.equipmentRows));
+            setViewMode('working');
+            toast.success(`Session loaded: ${sessionData.clientName}`);
+            setIsProcessing(false);
+            console.log('✅ Session loaded successfully');
+            return;
+          } else {
+            console.warn('⚠️ JSON file is not a session file (missing type field)');
+            toast.error('This is not a valid session file');
+            setIsProcessing(false);
+            return;
+          }
+        } catch (e) {
+          console.error('❌ Failed to parse JSON:', e);
+          toast.error('Invalid JSON file format');
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
+      console.log('📊 Processing as CSV files...');
+      // Process CSV files (preserveOrder=true by default to match VBA macro behavior)
+      // The VBA macro does NOT sort data ('Call SORTIT' is commented out)
       const processed = await processCsvFiles(files, caseInsensitive);
       setResult(processed);
+      
+      // Process with Excel logic
+      const excelProcessed = processWithExcelLogic(processed.combinedDeduped, processed.schema);
+      
+      // Assign page numbers
+      const withPageNumbers = {
+        ...excelProcessed,
+        processed: assignPageNumbers(excelProcessed.processed),
+        byStatus: {
+          procedures: assignPageNumbers(excelProcessed.byStatus.procedures),
+          notCollected: assignPageNumbers(excelProcessed.byStatus.notCollected),
+          noLubePoint: assignPageNumbers(excelProcessed.byStatus.noLubePoint),
+          sampled: assignPageNumbers(excelProcessed.byStatus.sampled),
+          questions: assignPageNumbers(excelProcessed.byStatus.questions),
+        },
+      };
+      
+      setExcelResult(withPageNumbers);
+      
       if (processed.errors.length > 0) {
         processed.errors.forEach(err => toast.warning(err));
       } else {
-        toast.success("CSV files processed successfully");
+        toast.success("Files processed successfully!");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to process CSV files");
+      toast.error("Failed to process files");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDownload = (type: TabType) => {
+  const handleCsvDownload = (type: TabType) => {
     if (!result) return;
 
     let data;
@@ -83,37 +191,104 @@ export default function App() {
     toast.success(`Exported ${filename}`);
   };
 
-  const stats = [
+  const handleExcelExport = async () => {
+    if (!excelResult) return;
+    
+    try {
+      toast.info('Generating Excel file...');
+      await exportToFormattedExcel(
+        excelResult.processed,
+        excelResult.byStatus,
+        'IAMGold-Westwood'
+      );
+      toast.success('Excel file exported successfully!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export Excel file');
+    }
+  };
+
+  const handleQuickExport = async () => {
+    if (!excelResult) return;
+    
+    let data;
+    let filename;
+    
+    switch (excelTab) {
+      case 'all':
+        data = excelResult.processed;
+        filename = 'All_Equipment.xlsx';
+        break;
+      case 'procedures':
+        data = excelResult.byStatus.procedures;
+        filename = 'Procedures.xlsx';
+        break;
+      case 'notCollected':
+        data = excelResult.byStatus.notCollected;
+        filename = 'Not_Collected.xlsx';
+        break;
+      case 'noLubePoint':
+        data = excelResult.byStatus.noLubePoint;
+        filename = 'No_Lube_Point.xlsx';
+        break;
+      case 'sampled':
+        data = excelResult.byStatus.sampled;
+        filename = 'Sampled.xlsx';
+        break;
+      case 'questions':
+        data = excelResult.byStatus.questions;
+        filename = 'Questions.xlsx';
+        break;
+    }
+    
+    try {
+      await exportCurrentViewToExcel(data, filename);
+      toast.success(`Exported ${filename}`);
+    } catch (error) {
+      console.error(error);
+      toast.error('Export failed');
+    }
+  };
+
+  const csvStats = [
     { label: 'After Dedupe', value: result?.combinedDeduped.length || 0, icon: FileCheck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { label: 'Done Rows', value: result?.done.length || 0, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'ToDo Rows', value: result?.todo.length || 0, icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 
+  const excelStats = [
+    { label: 'Total Equipment', value: excelResult?.stats.total || 0, icon: LayoutList, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Critical', value: excelResult?.stats.critical || 0, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Complicated', value: excelResult?.stats.complicated || 0, icon: AlertCircle, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { label: 'Done', value: excelResult?.stats.done || 0, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'To Do', value: excelResult?.stats.todo || 0, icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Not Accessible', value: excelResult?.stats.notAccessible || 0, icon: AlertCircle, color: 'text-gray-600', bg: 'bg-gray-50' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900 font-sans p-4 md:p-8">
       <Toaster position="top-right" richColors />
       
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
-              Collecte CSV Merger
+            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Collecte CSV Merger & Processor
             </h1>
-          </div>
-          
-          <div className="flex items-center gap-4">
+            <p className="text-gray-600 mt-2">Merge, deduplicate, and process lubrication data</p>
           </div>
         </header>
 
         {/* Upload Section */}
-        <section className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <section className="bg-white p-6 rounded-2xl border border-gray-200 shadow-lg">
           <CsvUploader 
             files={files} 
             onFilesChange={setFiles} 
             onClear={() => {
               setFiles([]);
               setResult(null);
+              setExcelResult(null);
             }} 
           />
         </section>
@@ -127,99 +302,316 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-20 gap-4"
             >
-              <Loader2 className="animate-spin text-blue-600" size={40} />
-              <p className="text-lg font-medium text-gray-600">Processing CSV files...</p>
+              <Loader2 className="animate-spin text-blue-600" size={48} />
+              <p className="text-xl font-semibold text-gray-700">Processing files...</p>
+              <p className="text-sm text-gray-500">Merging, deduplicating, and analyzing equipment data</p>
             </motion.div>
-          ) : result ? (
+          ) : result && excelResult ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, idx) => (
-                  <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                      <stat.icon size={24} />
+              {/* View Mode Toggle */}
+              <div className="flex justify-center mb-6">
+                <div className="flex gap-2 bg-gray-100 p-2 rounded-lg">
+                  <button
+                    onClick={() => setViewMode('csv')}
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'csv' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'csv' ? '#2563eb' : '#ffffff',
+                      color: viewMode === 'csv' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    CSV View
+                  </button>
+                  <button
+                    onClick={() => setViewMode('excel')}
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'excel' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'excel' ? '#16a34a' : '#ffffff',
+                      color: viewMode === 'excel' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Equipment Review
+                  </button>
+                  <button
+                    onClick={() => setViewMode('working')}
+                    style={{
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: viewMode === 'working' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: viewMode === 'working' ? '#9333ea' : '#ffffff',
+                      color: viewMode === 'working' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Working Sheet
+                  </button>
+                </div>
+              </div>
+
+              {/* CSV View */}
+              {viewMode === 'csv' && (
+                <>
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {csvStats.map((stat, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
+                          <stat.icon size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                          <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CSV Exports */}
+                  <div className="flex flex-wrap gap-4">
+                    <button
+                      onClick={() => handleCsvDownload('combined')}
+                      className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200"
+                    >
+                      <Download size={20} />
+                      Export Combined CSV
+                    </button>
+                    <button
+                      onClick={() => handleCsvDownload('done')}
+                      disabled={!result.hasDoneColumn}
+                      className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={20} />
+                      Export Done CSV
+                    </button>
+                    <button
+                      onClick={() => handleCsvDownload('todo')}
+                      disabled={!result.hasDoneColumn}
+                      className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={20} />
+                      Export ToDo CSV
+                    </button>
+                  </div>
+
+                  {/* Preview Tabs */}
+                  <div className="space-y-4">
+                    <div className="flex border-b border-gray-200">
+                      {(['combined', 'done', 'todo'] as TabType[]).map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          disabled={tab !== 'combined' && !result.hasDoneColumn}
+                          className={`px-6 py-3 text-sm font-bold transition-all relative border-b-2 disabled:opacity-30
+                            ${activeTab === tab 
+                              ? 'text-blue-600 border-blue-600' 
+                              : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                        >
+                          {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </button>
+                      ))}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+
+                    <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
+                      {activeTab === 'combined' && (
+                        <CsvPreviewTable 
+                          data={result.combinedDeduped} 
+                          schema={result.schema} 
+                          title="Combined & Deduped Preview" 
+                        />
+                      )}
+                      {activeTab === 'done' && result.hasDoneColumn && (
+                        <CsvPreviewTable 
+                          data={result.done} 
+                          schema={result.schema} 
+                          title="Done Rows Preview" 
+                        />
+                      )}
+                      {activeTab === 'todo' && result.hasDoneColumn && (
+                        <CsvPreviewTable 
+                          data={result.todo} 
+                          schema={result.schema} 
+                          title="ToDo Rows Preview" 
+                        />
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                </>
+              )}
 
-              {/* Exports */}
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => handleDownload('combined')}
-                  className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200"
-                >
-                  <Download size={20} />
-                  Export Combined_Deduped
-                </button>
-                <button
-                  onClick={() => handleDownload('done')}
-                  disabled={!result.hasDoneColumn}
-                  className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  <Download size={20} />
-                  Export Done
-                </button>
-                <button
-                  onClick={() => handleDownload('todo')}
-                  disabled={!result.hasDoneColumn}
-                  className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-4 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-all active:scale-95 shadow-lg shadow-orange-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  <Download size={20} />
-                  Export ToDo
-                </button>
-              </div>
+              {/* Excel View */}
+              {viewMode === 'excel' && (
+                <>
+                  {/* Excel Stats Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {excelStats.map((stat, idx) => (
+                      <div key={idx} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className={`p-2 rounded-lg ${stat.bg} ${stat.color} w-fit mb-2`}>
+                          <stat.icon size={20} />
+                        </div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">{stat.label}</p>
+                        <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
 
-              {/* Preview Tabs */}
-              <div className="space-y-4">
-                <div className="flex border-b border-gray-200">
-                  {(['combined', 'done', 'todo'] as TabType[]).map((tab) => (
+                  {/* Excel Export Buttons */}
+                  <div className="flex flex-wrap gap-4">
                     <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      disabled={tab !== 'combined' && !result.hasDoneColumn}
-                      className={`px-6 py-3 text-sm font-bold transition-all relative border-b-2 disabled:opacity-30
-                        ${activeTab === tab 
-                          ? 'text-blue-600 border-blue-600' 
-                          : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'}`}
+                      onClick={handleExcelExport}
+                      className="flex-1 min-w-[250px] flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all active:scale-95 shadow-xl shadow-green-200"
                     >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      <FileSpreadsheet size={24} />
+                      Export Full Excel Schedule
                     </button>
-                  ))}
-                </div>
+                    <button
+                      onClick={handleQuickExport}
+                      className="flex items-center justify-center gap-2 px-6 py-5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg"
+                    >
+                      <Download size={20} />
+                      Export Current View
+                    </button>
+                  </div>
 
-                <div className="bg-white rounded-2xl overflow-hidden">
-                  {activeTab === 'combined' && (
-                    <CsvPreviewTable 
-                      data={result.combinedDeduped} 
-                      schema={result.schema} 
-                      title="Combined & Deduped Preview" 
+                  {/* Category Tabs */}
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+                    <div className="flex border-b border-gray-200 overflow-x-auto">
+                      {([
+                        { key: 'all', label: 'All Equipment', count: excelResult.processed.length },
+                        { key: 'procedures', label: 'Procedures', count: excelResult.byStatus.procedures.length },
+                        { key: 'notCollected', label: 'Not Collected', count: excelResult.byStatus.notCollected.length },
+                        { key: 'noLubePoint', label: 'No Lube Point', count: excelResult.byStatus.noLubePoint.length },
+                        { key: 'sampled', label: 'Sampled', count: excelResult.byStatus.sampled.length },
+                        { key: 'questions', label: 'Questions', count: excelResult.byStatus.questions.length },
+                      ] as const).map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setExcelTab(tab.key)}
+                          className={`px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap flex items-center gap-2
+                            ${excelTab === tab.key 
+                              ? 'text-green-600 border-green-600 bg-green-50' 
+                              : 'text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50'}`}
+                        >
+                          {tab.label}
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            excelTab === tab.key ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Equipment Review Display */}
+                    <div className="p-6">
+                      {excelTab === 'all' && (
+                        <EquipmentReview equipment={excelResult.processed} title="All Equipment" />
+                      )}
+                      {excelTab === 'procedures' && (
+                        <EquipmentReview equipment={excelResult.byStatus.procedures} title="Procedures to Perform" />
+                      )}
+                      {excelTab === 'notCollected' && (
+                        <EquipmentReview equipment={excelResult.byStatus.notCollected} title="Equipment Not Collected" />
+                      )}
+                      {excelTab === 'noLubePoint' && (
+                        <EquipmentReview equipment={excelResult.byStatus.noLubePoint} title="No Lubrication Points" />
+                      )}
+                      {excelTab === 'sampled' && (
+                        <EquipmentReview equipment={excelResult.byStatus.sampled} title="Sampled Equipment" />
+                      )}
+                      {excelTab === 'questions' && (
+                        <EquipmentReview equipment={excelResult.byStatus.questions} title="Questions & Comments" />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Working Sheet View */}
+              {viewMode === 'working' && (
+                <>
+                  {!setupConfig ? (
+                    <SetupWizard
+                      onComplete={(config) => {
+                        setSetupConfig(config);
+                        toast.success('Configuration saved!');
+                      }}
                     />
+                  ) : (
+                    <>
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-xl font-bold text-purple-900">
+                              {setupConfig.clientName}
+                            </h3>
+                            <p className="text-sm text-purple-700 mt-1">
+                              Language: {setupConfig.language.toUpperCase()} | 
+                              Pre-program: {setupConfig.preProgram ? 'Yes' : 'No'} | 
+                              Spartakus: {setupConfig.spartakus ? 'Yes' : 'No'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setSetupConfig(null)}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
+                          >
+                            Change Settings
+                          </button>
+                        </div>
+                      </div>
+
+                      <WorkingSheet
+                        equipment={excelResult.processed}
+                        rawData={result.combinedDeduped}
+                        schema={result.schema}
+                        clientName={setupConfig.clientName}
+                        language={setupConfig.language}
+                        equipmentRows={equipmentRows}
+                        onEquipmentRowsChange={setEquipmentRows}
+                        onSaveSession={() => {
+                          // Save complete session as downloadable file
+                          const sessionData = {
+                            type: 'workingsheet_session',
+                            version: '1.0',
+                            timestamp: new Date().toISOString(),
+                            clientName: setupConfig.clientName,
+                            language: setupConfig.language,
+                            result: result,
+                            excelResult: excelResult,
+                            equipmentRows: Array.from(equipmentRows.entries())
+                          };
+                          const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `${setupConfig.clientName}_Session_${new Date().toISOString().split('T')[0]}.json`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          toast.success('Session saved!');
+                        }}
+                        onUpdate={(updated) => {
+                          setExcelResult({
+                            ...excelResult,
+                            processed: updated,
+                          });
+                        }}
+                      />
+                    </>
                   )}
-                  {activeTab === 'done' && result.hasDoneColumn && (
-                    <CsvPreviewTable 
-                      data={result.done} 
-                      schema={result.schema} 
-                      title="Done Rows Preview" 
-                    />
-                  )}
-                  {activeTab === 'todo' && result.hasDoneColumn && (
-                    <CsvPreviewTable 
-                      data={result.todo} 
-                      schema={result.schema} 
-                      title="ToDo Rows Preview" 
-                    />
-                  )}
-                </div>
-              </div>
+                </>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -228,7 +620,7 @@ export default function App() {
               className="flex flex-col items-center justify-center py-32 text-gray-400"
             >
               <FileCheck size={64} strokeWidth={1} />
-              <p className="mt-4 text-lg">Upload CSV files to begin merging and deduplicating</p>
+              <p className="mt-4 text-lg">Upload CSV files to begin processing</p>
             </motion.div>
           )}
         </AnimatePresence>

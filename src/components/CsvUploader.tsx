@@ -11,16 +11,20 @@ interface CsvUploaderProps {
 
 export const CsvUploader: React.FC<CsvUploaderProps> = ({ files, onFilesChange, onClear }) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const csvFiles = acceptedFiles.filter(file => 
-      file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv'
+    const validFiles = acceptedFiles.filter(file => 
+      file.name.toLowerCase().endsWith('.csv') || 
+      file.name.toLowerCase().endsWith('.json') ||
+      file.type === 'text/csv' ||
+      file.type === 'application/json'
     );
-    onFilesChange([...files, ...csvFiles]);
+    onFilesChange([...files, ...validFiles]);
   }, [files, onFilesChange]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'text/csv': ['.csv'],
+      'application/json': ['.json'],
     },
   });
 
@@ -44,9 +48,9 @@ export const CsvUploader: React.FC<CsvUploaderProps> = ({ files, onFilesChange, 
           </div>
           <div>
             <p className="font-medium text-gray-900">
-              {isDragActive ? 'Drop the CSV files here' : 'Click or drag CSV files to upload'}
+              {isDragActive ? 'Drop the files here' : 'Click or drag CSV or JSON files to upload'}
             </p>
-            <p className="text-sm text-gray-500 mt-1">Supports multi-file merging and wide CSVs</p>
+            <p className="text-sm text-gray-500 mt-1">CSV for data processing • JSON for session restore</p>
           </div>
         </div>
       </div>

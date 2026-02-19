@@ -23,7 +23,8 @@ export interface ProcessedResult {
 
 export async function processCsvFiles(
   files: File[],
-  caseInsensitive: boolean
+  caseInsensitive: boolean,
+  preserveOrder: boolean = true  // NEW: Don't sort by default (matches VBA behavior)
 ): Promise<ProcessedResult> {
   let allRows: CsvRow[] = [];
   let globalSchema: ColumnInfo[] = [];
@@ -109,10 +110,10 @@ export async function processCsvFiles(
   if (!hasDoneColumn) errors.push("Missing column: Done?");
   if (!hasAssetNumberColumn) errors.push("Missing column: Asset number (dedupe skipped)");
 
-  // 3. Combine Logic: Sort
+  // 3. Combine Logic: Sort (only if preserveOrder is false)
   let processedData = [...allRows];
   
-  if (hasDoneColumn) {
+  if (hasDoneColumn && !preserveOrder) {
     const getSortPriority = (val: string): number => {
       const trimmed = val.trim();
       const compare = caseInsensitive ? trimmed.toLowerCase() : trimmed;

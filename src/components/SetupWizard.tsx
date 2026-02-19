@@ -62,9 +62,6 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-8 w-full">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-          <Settings className="text-white" size={32} />
-        </div>
         <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
       </div>
 
@@ -82,21 +79,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setLanguage('en')}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      language === 'en'
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: language === 'en' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: language === 'en' ? '#2563eb' : '#ffffff',
+                      color: language === 'en' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setLanguage('fr')}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      language === 'fr'
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: language === 'fr' ? 'none' : '2px solid #1f2937',
+                      backgroundColor: language === 'fr' ? '#2563eb' : '#ffffff',
+                      color: language === 'fr' ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
@@ -118,21 +125,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setPreProgram(true)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      preProgram
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: preProgram ? 'none' : '2px solid #1f2937',
+                      backgroundColor: preProgram ? '#16a34a' : '#ffffff',
+                      color: preProgram ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setPreProgram(false)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      !preProgram
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: !preProgram ? 'none' : '2px solid #1f2937',
+                      backgroundColor: !preProgram ? '#16a34a' : '#ffffff',
+                      color: !preProgram ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
@@ -154,21 +171,31 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSpartakus(true)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      spartakus
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: spartakus ? 'none' : '2px solid #1f2937',
+                      backgroundColor: spartakus ? '#9333ea' : '#ffffff',
+                      color: spartakus ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.yes}
                   </button>
                   <button
                     onClick={() => setSpartakus(false)}
-                    className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      !spartakus
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
-                    }`}
+                    style={{
+                      flex: 1,
+                      padding: '16px 32px',
+                      fontWeight: 'bold',
+                      borderRadius: '8px',
+                      border: !spartakus ? 'none' : '2px solid #1f2937',
+                      backgroundColor: !spartakus ? '#9333ea' : '#ffffff',
+                      color: !spartakus ? '#ffffff' : '#1f2937',
+                      cursor: 'pointer'
+                    }}
                   >
                     {t.no}
                   </button>
@@ -198,13 +225,37 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
           <button
             onClick={handleSubmit}
             disabled={!clientName.trim()}
-            className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-indigo-600"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              padding: '16px 32px',
+              backgroundColor: clientName.trim() ? '#2563eb' : '#ffffff',
+              color: clientName.trim() ? '#ffffff' : '#6b7280',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              borderRadius: '12px',
+              border: clientName.trim() ? 'none' : '2px solid #d1d5db',
+              cursor: clientName.trim() ? 'pointer' : 'not-allowed',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+            }}
+            onMouseOver={(e) => {
+              if (clientName.trim()) {
+                e.currentTarget.style.backgroundColor = '#1d4ed8';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (clientName.trim()) {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+              }
+            }}
           >
             <CheckCircle size={24} />
             {t.continue}
           </button>
         </div>
-      </div>
     </div>
   );
 }
