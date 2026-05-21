@@ -112,22 +112,21 @@ export async function processCsvFiles(
 
   // 3. Combine Logic: Sort (only if preserveOrder is false)
   let processedData = [...allRows];
-  
+
+  const getSortPriority = (val: string): number => {
+    const trimmed = val.trim();
+    const compare = caseInsensitive ? trimmed.toLowerCase() : trimmed;
+    const yes = caseInsensitive ? "yes" : "Yes";
+    const nlp = caseInsensitive ? "nlp" : "Nlp";
+    const no = caseInsensitive ? "no" : "No";
+    if (compare === yes) return 1;
+    if (compare === nlp) return 3;
+    if (compare === "") return 4;
+    if (compare === no) return 5;
+    return 2;
+  };
+
   if (hasDoneColumn && !preserveOrder) {
-    const getSortPriority = (val: string): number => {
-      const trimmed = val.trim();
-      const compare = caseInsensitive ? trimmed.toLowerCase() : trimmed;
-      const yes = caseInsensitive ? "yes" : "Yes";
-      const nlp = caseInsensitive ? "nlp" : "Nlp";
-      const no = caseInsensitive ? "no" : "No";
-
-      if (compare === yes) return 1;
-      if (compare === nlp) return 3;
-      if (compare === "") return 4;
-      if (compare === no) return 5;
-      return 2;
-    };
-
     processedData.sort((a, b) => {
       const valA = a[doneCol.internalKey] || "";
       const valB = b[doneCol.internalKey] || "";
@@ -137,7 +136,7 @@ export async function processCsvFiles(
 
   // 4. Combine Logic: Deduplicate
   if (hasAssetNumberColumn) {
-    const seen = new Set<string>();
+    const seen = new Map<string, number>(); // asset -> index in deduped
     const deduped: CsvRow[] = [];
 
     processedData.forEach((row) => {
@@ -148,8 +147,16 @@ export async function processCsvFiles(
         // If Asset number is blank, do not deduplicate those rows (keep all)
         deduped.push(row);
       } else if (!seen.has(trimmedVal)) {
-        seen.add(trimmedVal);
+        seen.set(trimmedVal, deduped.length);
         deduped.push(row);
+      } else if (hasDoneColumn) {
+        // Keep whichever has the better Done? priority
+        const existingIdx = seen.get(trimmedVal)!;
+        const existingPriority = getSortPriority(deduped[existingIdx][doneCol!.internalKey] || "");
+        const newPriority = getSortPriority(row[doneCol!.internalKey] || "");
+        if (newPriority < existingPriority) {
+          deduped[existingIdx] = row;
+        }
       }
     });
     processedData = deduped;
